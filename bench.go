@@ -1,17 +1,23 @@
-package redbench
+//package redbench
+package main
 
 import (
 	"bufio"
 	"errors"
+	"flag"
 	"fmt"
+	"github.com/wangaoone/ecRedis"
 	"io"
 	"io/ioutil"
 	"math"
-	"net"
+	"math/rand"
+	//"net"
 	"os"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
+	//"github.com/wangaoone/redeo"
 )
 
 func readResp(rd *bufio.Reader, n int, opts *Options) error {
@@ -49,9 +55,14 @@ func readResp(rd *bufio.Reader, n int, opts *Options) error {
 
 // Options represents various options used by the Bench() function.
 type Options struct {
+	Address  string
 	Requests int
 	Clients  int
 	Pipeline int
+	Keymin   int
+	Keymax   int
+	Objsz    int
+	Op       int
 	Quiet    bool
 	CSV      bool
 	Stdout   io.Writer
@@ -60,26 +71,54 @@ type Options struct {
 
 // DefaultsOptions are the default options used by the Bench() function.
 var DefaultOptions = &Options{
-	Requests: 100000,
-	Clients:  50,
+	Address:  "127.0.0.1:6379",
+	Requests: 15,
+	Clients:  1,
 	Pipeline: 1,
+	Keymin:   0,
+	Keymax:   99,
+	Objsz:    10485760 * 4,
+	Op:       0, // 0: SET; 1: GET
 	Quiet:    false,
 	CSV:      false,
 	Stdout:   os.Stdout,
 	Stderr:   os.Stderr,
 }
 
-// Bench performs a benchmark on the server at the specified address.
-func Bench(
-	name string,
-	addr string,
-	opts *Options,
-	prep func(conn net.Conn) bool,
-	fill func(buf []byte) []byte,
-) {
-	if opts == nil {
-		opts = DefaultOptions
+func getRandomRange(min int, max int) int {
+	var rn int
+	rand.Seed(time.Now().UnixNano())
+	rn = rand.Intn(max-min) + min
+	return rn
+}
+
+func genKey(keymin int, keymax int, op int, i int) string {
+	var ret string
+	if op == 0 { // SET
+		keyIdx := keymin + i%(keymax-keymin)
+		ret = strings.Join([]string{"key-", strconv.Itoa(keyIdx)}, "")
+	} else { // GET
+		rn := getRandomRange(keymin, keymax)
+		ret = strings.Join([]string{"key-", strconv.Itoa(rn)}, "")
 	}
+	fmt.Println("generated key: ", ret, "len: ", len(ret))
+	return ret
+}
+
+// Bench performs a benchmark on the server at the specified address.
+//func Bench(
+//	name string,
+//	addr string,
+//	opts *Options,
+//	prep func(conn net.Conn) bool,
+//	fill func(buf []byte) []byte,
+//) {
+func Bench(
+	opts *Options,
+) {
+	//if opts == nil {
+	//	opts = DefaultOptions
+	//}
 	if opts.Stderr == nil {
 		opts.Stderr = ioutil.Discard
 	}
@@ -95,7 +134,8 @@ func Bench(
 	remaining := int64(opts.Clients)
 	errs := make([]error, opts.Clients)
 	durs := make([][]time.Duration, opts.Clients)
-	conns := make([]net.Conn, opts.Clients)
+	//conns := make([]net.Conn, opts.Clients)
+	clients := make([]ecRedis.Client, opts.Clients)
 
 	// create all clients
 	for i := 0; i < opts.Clients; i++ {
@@ -107,21 +147,25 @@ func Bench(
 		for j := 0; j < len(durs[i]); j++ {
 			durs[i][j] = -1
 		}
-		conn, err := net.Dial("tcp", addr)
-		if err != nil {
-			if i == 0 {
-				fmt.Fprintf(opts.Stderr, "%s\n", err.Error())
-				return
+		//conn, err := net.Dial("tcp", addr)
+		client := ecRedis.NewClient(10, 4, 32)
+		client.Dial(opts.Address)
+		/*
+			if err != nil {
+				if i == 0 {
+					fmt.Fprintf(opts.Stderr, "%s\n", err.Error())
+					return
+				}
+				errs[i] = err
 			}
-			errs[i] = err
-		}
-		if conn != nil && prep != nil {
-			if !prep(conn) {
-				conn.Close()
-				conn = nil
+			if conn != nil && prep != nil {
+				if !prep(conn) {
+					conn.Close()
+					conn = nil
+				}
 			}
-		}
-		conns[i] = conn
+			conns[i] = conn*/
+		clients[i] = client
 	}
 
 	tstart := time.Now()
@@ -130,38 +174,54 @@ func Bench(
 		if i == opts.Clients-1 {
 			crequests += rpcex
 		}
+		//val := make([]byte, 10485760)
+		val := make([]byte, opts.Objsz)
+		rand.Read(val)
 
-		go func(conn net.Conn, client, crequests int) {
+		//go func(conn net.Conn, client, crequests int) {
+		go func(client ecRedis.Client, cid, crequests int) {
 			defer func() {
 				atomic.AddInt64(&remaining, -1)
 			}()
-			if conn == nil {
+			/*if conn == nil {
+			if client == nil {
 				return
-			}
+			}*/
 			err := func() error {
-				var buf []byte
-				rd := bufio.NewReader(conn)
+				//var buf []byte
+				//rd := bufio.NewReader(conn)
 				for i := 0; i < crequests; i += opts.Pipeline {
 					n := opts.Pipeline
 					if i+n > crequests {
 						n = crequests - i
 					}
-					buf = buf[:0]
-					for i := 0; i < n; i++ {
-						buf = fill(buf)
-					}
-					atomic.AddUint64(&totalPayload, uint64(len(buf)))
+					key := genKey(opts.Keymin, opts.Keymax, opts.Op, i)
+					/*
+						buf = buf[:0]
+						for i := 0; i < n; i++ {
+							buf = fill(buf)
+						}
+						atomic.AddUint64(&totalPayload, uint64(len(buf)))
+					*/
+					atomic.AddUint64(&totalPayload, uint64(len(val)))
 					start := time.Now()
-					_, err := conn.Write(buf)
-					if err != nil {
+					//_, err := conn.Write(buf)
+					//client.EcSet("key", val)
+					if opts.Op == 0 {
+						client.EcSet(key, val)
+					} else {
+						client.EcGet(key)
+					}
+					client.Receive()
+					/*if err != nil {
 						return err
 					}
 					if err := readResp(rd, n, opts); err != nil {
 						return err
-					}
+					}*/
 					stop := time.Since(start)
 					for j := 0; j < n; j++ {
-						durs[client][i+j] = stop / time.Duration(n)
+						durs[cid][i+j] = stop / time.Duration(n)
 					}
 					atomic.AddInt64(&duration, int64(stop))
 					atomic.AddUint64(&count, uint64(n))
@@ -170,9 +230,10 @@ func Bench(
 				return nil
 			}()
 			if err != nil {
-				errs[client] = err
+				errs[cid] = err
 			}
-		}(conns[i], i, crequests)
+			//}(conns[i], i, crequests)
+		}(clients[i], i, crequests)
 	}
 	var die bool
 	for {
@@ -186,13 +247,14 @@ func Bench(
 			realrps = float64(count) / (float64(real) / float64(time.Second))
 		}
 		if !opts.CSV {
-			fmt.Fprintf(opts.Stdout, "\r%s: %.2f", name, realrps)
+			//fmt.Fprintf(opts.Stdout, "\r%s: %.2f", name, realrps)
+			fmt.Fprintf(opts.Stdout, "\r%.2f", realrps)
 			if more {
 				fmt.Fprintf(opts.Stdout, "\r")
 			} else if opts.Quiet {
 				fmt.Fprintf(opts.Stdout, " requests per second\n")
 			} else {
-				fmt.Fprintf(opts.Stdout, "\r====== %s ======\n", name)
+				//fmt.Fprintf(opts.Stdout, "\r====== %s ======\n", name)
 				fmt.Fprintf(opts.Stdout, "  %d requests completed in %.2f seconds\n", opts.Requests, float64(real)/float64(time.Second))
 				fmt.Fprintf(opts.Stdout, "  %d parallel clients\n", opts.Clients)
 				fmt.Fprintf(opts.Stdout, "  %d bytes payload\n", totalPayload/opts.Requests)
@@ -230,7 +292,8 @@ func Bench(
 		}
 		if !more {
 			if opts.CSV {
-				fmt.Fprintf(opts.Stdout, "\"%s\",\"%.2f\"\n", name, realrps)
+				//fmt.Fprintf(opts.Stdout, "\"%s\",\"%.2f\"\n", name, realrps)
+				fmt.Fprintf(opts.Stdout, "\"%.2f\"\n", realrps)
 			}
 			for _, err := range errs {
 				if err != nil {
@@ -247,11 +310,12 @@ func Bench(
 	}
 
 	// close clients
-	for i := 0; i < len(conns); i++ {
-		if conns[i] != nil {
-			conns[i].Close()
-		}
-	}
+	/*
+		for i := 0; i < len(conns); i++ {
+			if conns[i] != nil {
+				conns[i].Close()
+			}
+		}*/
 	if die {
 		os.Exit(1)
 	}
@@ -271,4 +335,54 @@ func AppendCommand(buf []byte, args ...string) []byte {
 		buf = append(buf, '\r', '\n')
 	}
 	return buf
+}
+
+func helpInfo() {
+	fmt.Println("Usage: bench [options]")
+	fmt.Println("Option list: ")
+	fmt.Println("  -addr [ADDR:PORT]: server address:port")
+	fmt.Println("  -n [NUMBER]: number of requests")
+	fmt.Println("  -c [NUMBER]: number of concurrent clients")
+	fmt.Println("  -pipeline [NUMBER]: number of pipelined requests")
+	fmt.Println("  -keymin [NUMBER]: minimum key range")
+	fmt.Println("  -keymax [NUMBER]: maximum key range")
+	fmt.Println("  -d [NUMBER]: object data size")
+	fmt.Println("  -op [0 or 1]: operation type (0: SET (load the data store); 1: GET)")
+	fmt.Println("  -h: print out help info")
+}
+
+func main() {
+	/*
+		Requests int
+		Clients  int
+		Pipeline int
+		Keymin   int
+		Keymax   int
+		Objsz    int
+		Op       int
+	*/
+	//printInfo := flag.Bool("h", false, "help info")
+	var printInfo bool
+	flag.BoolVar(&printInfo, "h", false, "help info")
+
+	option := DefaultOptions
+
+	flag.StringVar(&option.Address, "addr", "127.0.0.1:6379", "server address:port")
+	flag.IntVar(&option.Requests, "n", 10, "number of requests")
+	flag.IntVar(&option.Clients, "c", 1, "number of clients")
+	flag.IntVar(&option.Pipeline, "pipeline", 1, "number of pipelined requests")
+	flag.IntVar(&option.Keymin, "keymin", 0, "minimum key range")
+	flag.IntVar(&option.Keymax, "keymax", 10, "maximum key range")
+	flag.IntVar(&option.Objsz, "d", 128, "object data size")
+	flag.IntVar(&option.Op, "op", 0, "operation type")
+
+	flag.Parse()
+
+	if printInfo {
+		helpInfo()
+		os.Exit(0)
+	}
+
+	fmt.Println("Test starting...")
+	Bench(option)
 }
