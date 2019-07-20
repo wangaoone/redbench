@@ -351,7 +351,9 @@ func helpInfo() {
 	fmt.Println("  -pipeline [NUMBER]: number of pipelined requests")
 	fmt.Println("  -keymin [NUMBER]: minimum key range")
 	fmt.Println("  -keymax [NUMBER]: maximum key range")
-	fmt.Println("  -d [NUMBER]: object data size")
+	fmt.Println("  -sz [NUMBER]: object data size")
+	fmt.Println("  -d [NUMBER]: number of data shards for RS erasure coding")
+	fmt.Println("  -p [NUMBER]: number of parity shards for RS erasure coding")
 	fmt.Println("  -op [0 or 1]: operation type (0: SET (load the data store); 1: GET)")
 	fmt.Println("  -h: print out help info")
 }
