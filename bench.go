@@ -343,7 +343,7 @@ func AppendCommand(buf []byte, args ...string) []byte {
 }
 
 func helpInfo() {
-	fmt.Println("Usage: bench [options]")
+	fmt.Println("Usage: ./bench [options]")
 	fmt.Println("Option list: ")
 	fmt.Println("  -addr [ADDR:PORT]: server address:port")
 	fmt.Println("  -n [NUMBER]: number of requests")
