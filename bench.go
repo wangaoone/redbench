@@ -55,34 +55,38 @@ func readResp(rd *bufio.Reader, n int, opts *Options) error {
 
 // Options represents various options used by the Bench() function.
 type Options struct {
-	Address  string
-	Requests int
-	Clients  int
-	Pipeline int
-	Keymin   int
-	Keymax   int
-	Objsz    int
-	Op       int
-	Quiet    bool
-	CSV      bool
-	Stdout   io.Writer
-	Stderr   io.Writer
+	Address     string
+	Requests    int
+	Clients     int
+	Pipeline    int
+	Keymin      int
+	Keymax      int
+	Objsz       int
+	Datashard   int
+	Parityshard int
+	Op          int
+	Quiet       bool
+	CSV         bool
+	Stdout      io.Writer
+	Stderr      io.Writer
 }
 
 // DefaultsOptions are the default options used by the Bench() function.
 var DefaultOptions = &Options{
-	Address:  "127.0.0.1:6379",
-	Requests: 15,
-	Clients:  1,
-	Pipeline: 1,
-	Keymin:   0,
-	Keymax:   99,
-	Objsz:    10485760 * 4,
-	Op:       0, // 0: SET; 1: GET
-	Quiet:    false,
-	CSV:      false,
-	Stdout:   os.Stdout,
-	Stderr:   os.Stderr,
+	Address:     "127.0.0.1:6379",
+	Requests:    15,
+	Clients:     1,
+	Pipeline:    1,
+	Keymin:      0,
+	Keymax:      99,
+	Objsz:       10485760 * 4,
+	Datashard:   4,
+	Parityshard: 2,
+	Op:          0, // 0: SET; 1: GET
+	Quiet:       false,
+	CSV:         false,
+	Stdout:      os.Stdout,
+	Stderr:      os.Stderr,
 }
 
 func getRandomRange(min int, max int) int {
@@ -95,7 +99,7 @@ func getRandomRange(min int, max int) int {
 func genKey(keymin int, keymax int, op int, i int) string {
 	var ret string
 	if op == 0 { // SET
-		keyIdx := keymin + i%(keymax-keymin)
+		keyIdx := keymin + i%(keymax-keymin+1)
 		ret = strings.Join([]string{"key-", strconv.Itoa(keyIdx)}, "")
 	} else { // GET
 		rn := getRandomRange(keymin, keymax)
@@ -128,8 +132,9 @@ func Bench(
 	var totalPayload uint64
 	var count uint64
 	var duration int64
-	rpc := opts.Requests / opts.Clients
-	rpcex := opts.Requests % opts.Clients
+	//rpc := opts.Requests / opts.Clients
+	//rpcex := opts.Requests % opts.Clients
+	rpc := opts.Requests
 	var tstop int64
 	remaining := int64(opts.Clients)
 	errs := make([]error, opts.Clients)
@@ -140,15 +145,15 @@ func Bench(
 	// create all clients
 	for i := 0; i < opts.Clients; i++ {
 		crequests := rpc
-		if i == opts.Clients-1 {
-			crequests += rpcex
-		}
+		//if i == opts.Clients-1 {
+		//	crequests += rpcex
+		//}
 		durs[i] = make([]time.Duration, crequests)
 		for j := 0; j < len(durs[i]); j++ {
 			durs[i][j] = -1
 		}
 		//conn, err := net.Dial("tcp", addr)
-		client := ecRedis.NewClient(10, 4, 32)
+		client := ecRedis.NewClient(opts.Datashard, opts.Parityshard, 32)
 		client.Dial(opts.Address)
 		/*
 			if err != nil {
@@ -171,9 +176,9 @@ func Bench(
 	tstart := time.Now()
 	for i := 0; i < opts.Clients; i++ {
 		crequests := rpc
-		if i == opts.Clients-1 {
-			crequests += rpcex
-		}
+		//if i == opts.Clients-1 {
+		//	crequests += rpcex
+		//}
 		//val := make([]byte, 10485760)
 		val := make([]byte, opts.Objsz)
 		rand.Read(val)
@@ -352,16 +357,6 @@ func helpInfo() {
 }
 
 func main() {
-	/*
-		Requests int
-		Clients  int
-		Pipeline int
-		Keymin   int
-		Keymax   int
-		Objsz    int
-		Op       int
-	*/
-	//printInfo := flag.Bool("h", false, "help info")
 	var printInfo bool
 	flag.BoolVar(&printInfo, "h", false, "help info")
 
@@ -373,7 +368,9 @@ func main() {
 	flag.IntVar(&option.Pipeline, "pipeline", 1, "number of pipelined requests")
 	flag.IntVar(&option.Keymin, "keymin", 0, "minimum key range")
 	flag.IntVar(&option.Keymax, "keymax", 10, "maximum key range")
-	flag.IntVar(&option.Objsz, "d", 128, "object data size")
+	flag.IntVar(&option.Objsz, "sz", 128, "object data size")
+	flag.IntVar(&option.Datashard, "d", 4, "number of data shards for RS erasure coding")
+	flag.IntVar(&option.Parityshard, "p", 2, "number of parity shards for RS erasure coding")
 	flag.IntVar(&option.Op, "op", 0, "operation type")
 
 	flag.Parse()
