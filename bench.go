@@ -12,13 +12,11 @@ import (
 	"log"
 	"math"
 	"math/rand"
-	//"net"
 	"os"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
-	//"github.com/wangaoone/redeo"
 )
 
 func readResp(rd *bufio.Reader, n int, opts *Options) error {
@@ -56,40 +54,44 @@ func readResp(rd *bufio.Reader, n int, opts *Options) error {
 
 // Options represents various options used by the Bench() function.
 type Options struct {
-	AddrList    string
-	Requests    int
-	Clients     int
-	Pipeline    int
-	Keymin      int
-	Keymax      int
-	Objsz       int
-	Datashard   int
-	Parityshard int
-	Op          int
-	Quiet       bool
-	CSV         bool
-	Stdout      io.Writer
-	Stderr      io.Writer
-	Printlog    bool
+	AddrList       string
+	Requests       int
+	Clients        int
+	Pipeline       int
+	Keymin         int
+	Keymax         int
+	Objsz          int
+	Datashard      int
+	Parityshard    int
+	ECmaxgoroutine int
+	Decoding       bool
+	Op             int
+	Quiet          bool
+	CSV            bool
+	Stdout         io.Writer
+	Stderr         io.Writer
+	Printlog       bool
 }
 
 // DefaultsOptions are the default options used by the Bench() function.
 var DefaultOptions = &Options{
-	AddrList:    "127.0.0.1:6379",
-	Requests:    15,
-	Clients:     1,
-	Pipeline:    1,
-	Keymin:      0,
-	Keymax:      99,
-	Objsz:       10485760 * 4,
-	Datashard:   4,
-	Parityshard: 2,
-	Op:          0, // 0: SET; 1: GET
-	Quiet:       false,
-	CSV:         false,
-	Stdout:      os.Stdout,
-	Stderr:      os.Stderr,
-	Printlog:    true,
+	AddrList:       "127.0.0.1:6379",
+	Requests:       15,
+	Clients:        1,
+	Pipeline:       1,
+	Keymin:         0,
+	Keymax:         99,
+	Objsz:          10485760 * 4,
+	Datashard:      4,
+	Parityshard:    2,
+	ECmaxgoroutine: 32,
+	Decoding:       true,
+	Op:             0, // 0: SET; 1: GET
+	Quiet:          false,
+	CSV:            false,
+	Stdout:         os.Stdout,
+	Stderr:         os.Stderr,
+	Printlog:       true,
 }
 
 func getRandomRange(min int, max int) int {
@@ -126,9 +128,6 @@ func Bench(
 	if !opts.Printlog {
 		log.SetOutput(ioutil.Discard)
 	}
-	//if opts == nil {
-	//	opts = DefaultOptions
-	//}
 	if opts.Stderr == nil {
 		opts.Stderr = ioutil.Discard
 	}
@@ -145,15 +144,11 @@ func Bench(
 	remaining := int64(opts.Clients)
 	errs := make([]error, opts.Clients)
 	durs := make([][]time.Duration, opts.Clients)
-	//conns := make([]net.Conn, opts.Clients)
 	clients := make([]ecRedis.Client, opts.Clients)
 
 	// create all clients
 	for i := 0; i < opts.Clients; i++ {
 		crequests := rpc
-		//if i == opts.Clients-1 {
-		//	crequests += rpcex
-		//}
 		durs[i] = make([]time.Duration, crequests)
 		for j := 0; j < len(durs[i]); j++ {
 			durs[i][j] = -1
@@ -162,7 +157,7 @@ func Bench(
 
 		addrArr := strings.Split(opts.AddrList, ",")
 		log.Println("number of hosts: ", len(addrArr))
-		client := ecRedis.NewClient(opts.Datashard, opts.Parityshard, 32)
+		client := ecRedis.NewClient(opts.Datashard, opts.Parityshard, opts.ECmaxgoroutine)
 		client.Dial(addrArr)
 		/*
 			if err != nil {
@@ -228,6 +223,9 @@ func Bench(
 						host, _ = client.EcGet(key)
 					}
 					client.Receive(host)
+					if opts.Decoding {
+						ecRedis.Decoding(client.EC, client.ChunkArr)
+					}
 					/*if err != nil {
 						return err
 					}
@@ -364,8 +362,11 @@ func helpInfo() {
 	fmt.Println("  -sz [NUMBER]: object data size")
 	fmt.Println("  -d [NUMBER]: number of data shards for RS erasure coding")
 	fmt.Println("  -p [NUMBER]: number of parity shards for RS erasure coding")
+	fmt.Println("  -g [NUMBER]: max number of goroutines for RS erasure coding")
+	fmt.Println("  -dec: do decoding after Receive()?")
 	fmt.Println("  -op [0 or 1]: operation type (0: SET (load the data store); 1: GET)")
-	fmt.Println("  -h: print out help info")
+	fmt.Println("  -log: print out debugging info?")
+	fmt.Println("  -h: print out help info?")
 }
 
 func main() {
@@ -383,6 +384,8 @@ func main() {
 	flag.IntVar(&option.Objsz, "sz", 128, "object data size")
 	flag.IntVar(&option.Datashard, "d", 4, "number of data shards for RS erasure coding")
 	flag.IntVar(&option.Parityshard, "p", 2, "number of parity shards for RS erasure coding")
+	flag.IntVar(&option.ECmaxgoroutine, "g", 32, "max number of goroutines for RS erasure coding")
+	flag.BoolVar(&option.Decoding, "dec", true, "do decoding after Receive()?")
 	flag.IntVar(&option.Op, "op", 0, "operation type")
 	flag.BoolVar(&option.Printlog, "log", true, "print debugging log?")
 
