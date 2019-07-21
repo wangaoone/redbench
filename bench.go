@@ -55,7 +55,7 @@ func readResp(rd *bufio.Reader, n int, opts *Options) error {
 
 // Options represents various options used by the Bench() function.
 type Options struct {
-	Address     string
+	AddrList    string
 	Requests    int
 	Clients     int
 	Pipeline    int
@@ -73,7 +73,7 @@ type Options struct {
 
 // DefaultsOptions are the default options used by the Bench() function.
 var DefaultOptions = &Options{
-	Address:     "127.0.0.1:6379",
+	AddrList:    "127.0.0.1:6379",
 	Requests:    15,
 	Clients:     1,
 	Pipeline:    1,
@@ -100,10 +100,10 @@ func genKey(keymin int, keymax int, op int, i int) string {
 	var ret string
 	if op == 0 { // SET
 		keyIdx := keymin + i%(keymax-keymin+1)
-		ret = strings.Join([]string{"key-", strconv.Itoa(keyIdx)}, "")
+		ret = strings.Join([]string{"key_", strconv.Itoa(keyIdx)}, "")
 	} else { // GET
 		rn := getRandomRange(keymin, keymax)
-		ret = strings.Join([]string{"key-", strconv.Itoa(rn)}, "")
+		ret = strings.Join([]string{"key_", strconv.Itoa(rn)}, "")
 	}
 	fmt.Println("generated key: ", ret, "len: ", len(ret))
 	return ret
@@ -153,8 +153,11 @@ func Bench(
 			durs[i][j] = -1
 		}
 		//conn, err := net.Dial("tcp", addr)
+
+		addrArr := strings.Split(opts.AddrList, ",")
+		fmt.Println("number of hosts: ", len(addrArr))
 		client := ecRedis.NewClient(opts.Datashard, opts.Parityshard, 32)
-		client.Dial(opts.Address)
+		client.Dial(addrArr)
 		/*
 			if err != nil {
 				if i == 0 {
@@ -212,12 +215,13 @@ func Bench(
 					start := time.Now()
 					//_, err := conn.Write(buf)
 					//client.EcSet("key", val)
+					var host string // FIXME: dirty hack... : (
 					if opts.Op == 0 {
-						client.EcSet(key, val)
+						host, _ = client.EcSet(key, val)
 					} else {
-						client.EcGet(key)
+						host, _ = client.EcGet(key)
 					}
-					client.Receive()
+					client.Receive(host)
 					/*if err != nil {
 						return err
 					}
@@ -345,7 +349,7 @@ func AppendCommand(buf []byte, args ...string) []byte {
 func helpInfo() {
 	fmt.Println("Usage: ./bench [options]")
 	fmt.Println("Option list: ")
-	fmt.Println("  -addr [ADDR:PORT]: server address:port")
+	fmt.Println("  -addrlist [ADDR:PORT,...]: server address:port")
 	fmt.Println("  -n [NUMBER]: number of requests")
 	fmt.Println("  -c [NUMBER]: number of concurrent clients")
 	fmt.Println("  -pipeline [NUMBER]: number of pipelined requests")
@@ -364,7 +368,7 @@ func main() {
 
 	option := DefaultOptions
 
-	flag.StringVar(&option.Address, "addr", "127.0.0.1:6379", "server address:port")
+	flag.StringVar(&option.AddrList, "addrlist", "127.0.0.1:6379", "server address:port")
 	flag.IntVar(&option.Requests, "n", 10, "number of requests")
 	flag.IntVar(&option.Clients, "c", 1, "number of clients")
 	flag.IntVar(&option.Pipeline, "pipeline", 1, "number of pipelined requests")
