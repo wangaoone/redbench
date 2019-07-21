@@ -9,6 +9,7 @@ import (
 	"github.com/wangaoone/ecRedis"
 	"io"
 	"io/ioutil"
+	"log"
 	"math"
 	"math/rand"
 	//"net"
@@ -69,6 +70,7 @@ type Options struct {
 	CSV         bool
 	Stdout      io.Writer
 	Stderr      io.Writer
+	Printlog    bool
 }
 
 // DefaultsOptions are the default options used by the Bench() function.
@@ -87,6 +89,7 @@ var DefaultOptions = &Options{
 	CSV:         false,
 	Stdout:      os.Stdout,
 	Stderr:      os.Stderr,
+	Printlog:    true,
 }
 
 func getRandomRange(min int, max int) int {
@@ -105,7 +108,7 @@ func genKey(keymin int, keymax int, op int, i int) string {
 		rn := getRandomRange(keymin, keymax)
 		ret = strings.Join([]string{"key_", strconv.Itoa(rn)}, "")
 	}
-	fmt.Println("generated key: ", ret, "len: ", len(ret))
+	log.Println("generated key: ", ret, "len: ", len(ret))
 	return ret
 }
 
@@ -120,6 +123,9 @@ func genKey(keymin int, keymax int, op int, i int) string {
 func Bench(
 	opts *Options,
 ) {
+	if !opts.Printlog {
+		log.SetOutput(ioutil.Discard)
+	}
 	//if opts == nil {
 	//	opts = DefaultOptions
 	//}
@@ -155,7 +161,7 @@ func Bench(
 		//conn, err := net.Dial("tcp", addr)
 
 		addrArr := strings.Split(opts.AddrList, ",")
-		fmt.Println("number of hosts: ", len(addrArr))
+		log.Println("number of hosts: ", len(addrArr))
 		client := ecRedis.NewClient(opts.Datashard, opts.Parityshard, 32)
 		client.Dial(addrArr)
 		/*
@@ -364,7 +370,7 @@ func helpInfo() {
 
 func main() {
 	var printInfo bool
-	flag.BoolVar(&printInfo, "h", false, "help info")
+	flag.BoolVar(&printInfo, "h", false, "help info?")
 
 	option := DefaultOptions
 
@@ -378,6 +384,7 @@ func main() {
 	flag.IntVar(&option.Datashard, "d", 4, "number of data shards for RS erasure coding")
 	flag.IntVar(&option.Parityshard, "p", 2, "number of parity shards for RS erasure coding")
 	flag.IntVar(&option.Op, "op", 0, "operation type")
+	flag.BoolVar(&option.Printlog, "log", true, "print debugging log?")
 
 	flag.Parse()
 
