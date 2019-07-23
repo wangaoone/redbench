@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	//"github.com/pkg/profile"
 	"github.com/wangaoone/ecRedis"
 	"io"
 	"io/ioutil"
@@ -223,7 +224,7 @@ func Bench(
 						host, _ = client.EcGet(key)
 					}
 					client.Receive(host)
-					if opts.Decoding {
+					if opts.Op == 1 && opts.Decoding {
 						ecRedis.Decoding(client.EC, client.ChunkArr)
 					}
 					/*if err != nil {
@@ -370,6 +371,10 @@ func helpInfo() {
 }
 
 func main() {
+	//profile.Start(profile.CPUProfile)
+	//defer profile.Start(profile.CPUProfile).Stop()
+	//defer profile.Start().Stop()
+
 	var printInfo bool
 	flag.BoolVar(&printInfo, "h", false, "help info?")
 
@@ -385,7 +390,7 @@ func main() {
 	flag.IntVar(&option.Datashard, "d", 4, "number of data shards for RS erasure coding")
 	flag.IntVar(&option.Parityshard, "p", 2, "number of parity shards for RS erasure coding")
 	flag.IntVar(&option.ECmaxgoroutine, "g", 32, "max number of goroutines for RS erasure coding")
-	flag.BoolVar(&option.Decoding, "dec", true, "do decoding after Receive()?")
+	flag.BoolVar(&option.Decoding, "dec", false, "do decoding after Receive()?")
 	flag.IntVar(&option.Op, "op", 0, "operation type")
 	flag.BoolVar(&option.Printlog, "log", true, "print debugging log?")
 
