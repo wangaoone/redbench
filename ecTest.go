@@ -45,25 +45,36 @@ func main() {
 		return
 	}
 
+	data[0] = nil
+	data[1] = nil
+	//data[2] = nil
+	//data[2][0] = 54321
+
 	// Decoding phase
-	t := time.Now()
+	t0 := time.Now()
 	ok, err = enc.Verify(data)
-	//if ok {
-	//	fmt.Println("No reconstruction needed")
-	//} else {
-	//fmt.Println("Verification failed. Reconstructing data")
-	err = enc.Reconstruct(data)
-	if err != nil {
-		fmt.Println("Reconstruct failed -", err)
-	}
-	ok, err = enc.Verify(data)
-	if !ok {
-		fmt.Println("Verification failed after reconstruction, data likely corrupted.")
-	}
-	if err != nil {
-		fmt.Println(err)
+	if ok {
+		fmt.Println("No reconstruction needed")
+	} else {
+		log.Println("First Verify() takes:", time.Since(t0))
+		fmt.Println("Verification failed. Reconstructing data")
+		t1 := time.Now()
+		err = enc.Reconstruct(data)
+		if err != nil {
+			fmt.Println("Reconstruct failed -", err)
+		}
+		log.Println("Reconstruct() takes:", time.Since(t1))
+		t2 := time.Now()
+		ok, err = enc.Verify(data)
+		if !ok {
+			fmt.Println("Verification failed after reconstruction, data likely corrupted.")
+		}
+		if err != nil {
+			fmt.Println(err)
+		}
+		log.Println("Verify() after Reconstruct() takes:", time.Since(t2))
+		log.Println("The whole decoding phase takes:", time.Since(t1))
 	}
 	//fmt.Println(ok)
 	//}
-	log.Println("Decoding takes:", time.Since(t))
 }
