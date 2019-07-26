@@ -404,19 +404,11 @@ func main() {
 	}
 
 	logCreate()
-	go func() {
-		t := time.NewTicker(10 * time.Second)
-		for {
-			select {
-			case <-t.C:
-				if err := nanolog.Flush(); err != nil {
-					fmt.Println("log flush err")
-				}
-			}
-		}
-	}()
 	fmt.Println("Test starting...")
 	Bench(option)
+	if err := nanolog.Flush(); err != nil {
+		fmt.Println("log flush err")
+	}
 }
 
 // logCreate create the nanoLog
