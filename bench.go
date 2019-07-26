@@ -6,6 +6,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/ScottMansfield/nanolog"
+
 	//"github.com/pkg/profile"
 	"github.com/wangaoone/ecRedis"
 	"io"
@@ -401,6 +403,33 @@ func main() {
 		os.Exit(0)
 	}
 
+	logCreate()
+	go func() {
+		t := time.NewTicker(10 * time.Second)
+		for {
+			select {
+			case <-t.C:
+				if err := nanolog.Flush(); err != nil {
+					fmt.Println("log flush err")
+				}
+			}
+		}
+	}()
 	fmt.Println("Test starting...")
 	Bench(option)
+}
+
+// logCreate create the nanoLog
+func logCreate() {
+	// get local time
+	location, _ := time.LoadLocation("EST")
+	// Set up nanoLog writer
+	nanoLogout, err := os.Create(time.Now().In(location).String() + "_bench.clog")
+	if err != nil {
+		panic(err)
+	}
+	err = nanolog.SetWriter(nanoLogout)
+	if err != nil {
+		panic(err)
+	}
 }
