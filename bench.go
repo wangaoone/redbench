@@ -403,7 +403,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	logCreate()
+	logCreate(option)
 	fmt.Println("Test starting...")
 	Bench(option)
 	if err := nanolog.Flush(); err != nil {
@@ -412,11 +412,11 @@ func main() {
 }
 
 // logCreate create the nanoLog
-func logCreate() {
+func logCreate(opts *Options) {
 	// get local time
 	location, _ := time.LoadLocation("EST")
 	// Set up nanoLog writer
-	nanoLogout, err := os.Create(time.Now().In(location).String() + "_bench.clog")
+	nanoLogout, err := os.Create(time.Now().In(location).String() + "_bench_" + strconv.Itoa(opts.Op) + ".clog")
 	if err != nil {
 		panic(err)
 	}
