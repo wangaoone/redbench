@@ -408,7 +408,8 @@ func main() {
 	}
 
 	logCreate(option)
-	file, err := os.Create(option.File)
+	f := option.File + ".txt"
+	file, err := os.Create(f)
 	if err != nil {
 		fmt.Println("Create file failed", err)
 	}
@@ -424,9 +425,9 @@ func main() {
 // logCreate create the nanoLog
 func logCreate(opts *Options) {
 	// get local time
-	location, _ := time.LoadLocation("EST")
+	//location, _ := time.LoadLocation("EST")
 	// Set up nanoLog writer
-	nanoLogout, err := os.Create(time.Now().In(location).String() + opts.File + "_bench.clog")
+	nanoLogout, err := os.Create("/tmp/bench/" + opts.File + "_bench.clog")
 	if err != nil {
 		panic(err)
 	}
