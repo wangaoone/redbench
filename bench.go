@@ -408,14 +408,18 @@ func main() {
 	}
 
 	logCreate(option)
+	fmt.Println("flag file is", option.File)
 	f := option.File + ".txt"
+	fmt.Println("file is", f)
 	file, err := os.Create(f)
 	if err != nil {
 		fmt.Println("Create file failed", err)
 	}
 	option.Stdout = file
 	fmt.Println("Test starting...")
+
 	Bench(option)
+
 	if err := nanolog.Flush(); err != nil {
 		fmt.Println("log flush err")
 	}
@@ -427,7 +431,9 @@ func logCreate(opts *Options) {
 	// get local time
 	//location, _ := time.LoadLocation("EST")
 	// Set up nanoLog writer
-	nanoLogout, err := os.Create("/tmp/bench/" + opts.File + "_bench.clog")
+	path := opts.File + "_bench.clog"
+	fmt.Println("path is ", path)
+	nanoLogout, err := os.Create(path)
 	if err != nil {
 		panic(err)
 	}
