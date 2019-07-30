@@ -74,6 +74,7 @@ type Options struct {
 	Stdout         io.Writer
 	Stderr         io.Writer
 	Printlog       bool
+	File           string
 }
 
 // DefaultsOptions are the default options used by the Bench() function.
@@ -95,6 +96,7 @@ var DefaultOptions = &Options{
 	Stdout:         os.Stdout,
 	Stderr:         os.Stderr,
 	Printlog:       true,
+	File:           "test.txt",
 }
 
 func getRandomRange(min int, max int) int {
@@ -369,6 +371,7 @@ func helpInfo() {
 	fmt.Println("  -dec: do decoding after Receive()?")
 	fmt.Println("  -op [0 or 1]: operation type (0: SET (load the data store); 1: GET)")
 	fmt.Println("  -log: print out debugging info?")
+	fmt.Println("  -file: print result to file")
 	fmt.Println("  -h: print out help info?")
 }
 
@@ -395,6 +398,7 @@ func main() {
 	flag.BoolVar(&option.Decoding, "dec", false, "do decoding after Receive()?")
 	flag.IntVar(&option.Op, "op", 0, "operation type")
 	flag.BoolVar(&option.Printlog, "log", true, "print debugging log?")
+	flag.StringVar(&option.File, "file", "test.txt", "print result to file")
 
 	flag.Parse()
 
@@ -404,11 +408,17 @@ func main() {
 	}
 
 	logCreate(option)
+	file, err := os.Create(option.File)
+	if err != nil {
+		fmt.Println("Create file failed", err)
+	}
+	option.Stdout = file
 	fmt.Println("Test starting...")
 	Bench(option)
 	if err := nanolog.Flush(); err != nil {
 		fmt.Println("log flush err")
 	}
+	file.Close()
 }
 
 // logCreate create the nanoLog
@@ -416,7 +426,7 @@ func logCreate(opts *Options) {
 	// get local time
 	location, _ := time.LoadLocation("EST")
 	// Set up nanoLog writer
-	nanoLogout, err := os.Create(time.Now().In(location).String() + "_bench_" + strconv.Itoa(opts.Op) + ".clog")
+	nanoLogout, err := os.Create(time.Now().In(location).String() + opts.File + "_bench.clog")
 	if err != nil {
 		panic(err)
 	}
