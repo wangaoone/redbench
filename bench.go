@@ -375,6 +375,11 @@ func helpInfo() {
 	fmt.Println("  -h: print out help info?")
 }
 
+func nanoLog(handle nanolog.Handle, args ...interface{}) error {
+	fmt.Println("args is ", args[1])
+	return nanolog.Log(handle, args...)
+}
+
 func main() {
 	//profile.Start(profile.CPUProfile)
 	//defer profile.Start(profile.CPUProfile).Stop()
@@ -411,9 +416,11 @@ func main() {
 	//optionMap["file"] = option.File
 	//ecRedis.CreateLog(optionMap)
 	logCreate(option)
-	ecRedis.SetLogger(nanolog.Log)
+	//ecRedis.SetLogger(nanoLog)
+	//
+	//nanoLog(ecRedis.LogClient, "a", "b", int64(1), int64(2), int64(3))
 
-	f := option.File + ".txt"
+	f := option.File + "_" + strconv.Itoa(option.Op) + "_summary.txt"
 	file, err := os.Create(f)
 	if err != nil {
 		fmt.Println("Create file failed", err)
@@ -434,7 +441,7 @@ func logCreate(opts *Options) {
 	// get local time
 	//location, _ := time.LoadLocation("EST")
 	// Set up nanoLog writer
-	path := opts.File + "_bench.clog"
+	path := opts.File + "_" + strconv.Itoa(opts.Op) + "_bench.clog"
 	nanoLogout, err := os.Create(path)
 	if err != nil {
 		panic(err)
