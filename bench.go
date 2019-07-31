@@ -229,7 +229,7 @@ func Bench(
 					}
 					client.Receive(host)
 					if opts.Op == 1 && opts.Decoding {
-						ecRedis.Decoding(client.EC, client.ChunkArr)
+						client.Decoding(client.ChunkArr)
 					}
 					/*if err != nil {
 						return err
@@ -408,9 +408,7 @@ func main() {
 	}
 
 	logCreate(option)
-	fmt.Println("flag file is", option.File)
 	f := option.File + ".txt"
-	fmt.Println("file is", f)
 	file, err := os.Create(f)
 	if err != nil {
 		fmt.Println("Create file failed", err)
@@ -432,7 +430,6 @@ func logCreate(opts *Options) {
 	//location, _ := time.LoadLocation("EST")
 	// Set up nanoLog writer
 	path := opts.File + "_bench.clog"
-	fmt.Println("path is ", path)
 	nanoLogout, err := os.Create(path)
 	if err != nil {
 		panic(err)
