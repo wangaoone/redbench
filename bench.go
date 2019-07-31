@@ -6,8 +6,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/ScottMansfield/nanolog"
-
 	//"github.com/pkg/profile"
 	"github.com/wangaoone/ecRedis"
 	"io"
@@ -407,7 +405,9 @@ func main() {
 		os.Exit(0)
 	}
 
-	logCreate(option)
+	optionMap := make(map[string]interface{})
+	optionMap["file"] = option.File
+	ecRedis.CreateLog(optionMap)
 
 	f := option.File + ".txt"
 	file, err := os.Create(f)
@@ -415,25 +415,26 @@ func main() {
 		fmt.Println("Create file failed", err)
 	}
 	option.Stdout = file
-	fmt.Println("Test starting...")
 
+	fmt.Println("Test starting...")
 	Bench(option)
-	ecRedis.Flush()
+
 	file.Close()
+	ecRedis.FlushLog()
 }
 
 // logCreate create the nanoLog
-func logCreate(opts *Options) {
-	// get local time
-	//location, _ := time.LoadLocation("EST")
-	// Set up nanoLog writer
-	path := opts.File + "_bench.clog"
-	nanoLogout, err := os.Create(path)
-	if err != nil {
-		panic(err)
-	}
-	err = nanolog.SetWriter(nanoLogout)
-	if err != nil {
-		panic(err)
-	}
-}
+//func logCreate(opts *Options) {
+//	// get local time
+//	//location, _ := time.LoadLocation("EST")
+//	// Set up nanoLog writer
+//	path := opts.File + "_bench.clog"
+//	nanoLogout, err := os.Create(path)
+//	if err != nil {
+//		panic(err)
+//	}
+//	err = nanolog.SetWriter(nanoLogout)
+//	if err != nil {
+//		panic(err)
+//	}
+//}
