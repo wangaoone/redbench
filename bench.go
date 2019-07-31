@@ -398,7 +398,7 @@ func main() {
 	flag.BoolVar(&option.Decoding, "dec", false, "do decoding after Receive()?")
 	flag.IntVar(&option.Op, "op", 0, "operation type")
 	flag.BoolVar(&option.Printlog, "log", true, "print debugging log?")
-	flag.StringVar(&option.File, "file", "test.txt", "print result to file")
+	flag.StringVar(&option.File, "file", "test", "print result to file")
 
 	flag.Parse()
 
@@ -408,6 +408,7 @@ func main() {
 	}
 
 	logCreate(option)
+
 	f := option.File + ".txt"
 	file, err := os.Create(f)
 	if err != nil {
@@ -417,10 +418,7 @@ func main() {
 	fmt.Println("Test starting...")
 
 	Bench(option)
-
-	if err := nanolog.Flush(); err != nil {
-		fmt.Println("log flush err")
-	}
+	ecRedis.Flush()
 	file.Close()
 }
 
