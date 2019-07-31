@@ -6,6 +6,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/ScottMansfield/nanolog"
+
 	//"github.com/pkg/profile"
 	"github.com/wangaoone/ecRedis"
 	"io"
@@ -405,9 +407,11 @@ func main() {
 		os.Exit(0)
 	}
 
-	optionMap := make(map[string]interface{})
-	optionMap["file"] = option.File
-	ecRedis.CreateLog(optionMap)
+	//optionMap := make(map[string]interface{})
+	//optionMap["file"] = option.File
+	//ecRedis.CreateLog(optionMap)
+	logCreate(option)
+	ecRedis.SetLogger(nanolog.Log)
 
 	f := option.File + ".txt"
 	file, err := os.Create(f)
@@ -420,21 +424,23 @@ func main() {
 	Bench(option)
 
 	file.Close()
-	ecRedis.FlushLog()
+	if err := nanolog.Flush(); err != nil {
+		fmt.Println("log flush err")
+	}
 }
 
-// logCreate create the nanoLog
-//func logCreate(opts *Options) {
-//	// get local time
-//	//location, _ := time.LoadLocation("EST")
-//	// Set up nanoLog writer
-//	path := opts.File + "_bench.clog"
-//	nanoLogout, err := os.Create(path)
-//	if err != nil {
-//		panic(err)
-//	}
-//	err = nanolog.SetWriter(nanoLogout)
-//	if err != nil {
-//		panic(err)
-//	}
-//}
+//logCreate create the nanoLog
+func logCreate(opts *Options) {
+	// get local time
+	//location, _ := time.LoadLocation("EST")
+	// Set up nanoLog writer
+	path := opts.File + "_bench.clog"
+	nanoLogout, err := os.Create(path)
+	if err != nil {
+		panic(err)
+	}
+	err = nanolog.SetWriter(nanoLogout)
+	if err != nil {
+		panic(err)
+	}
+}
