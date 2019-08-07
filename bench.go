@@ -179,6 +179,7 @@ func Bench(
 				}
 			}
 			conns[i] = conn*/
+		defer client.Close()
 		clients[i] = client
 	}
 
