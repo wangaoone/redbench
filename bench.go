@@ -247,7 +247,9 @@ func Bench(
 					atomic.AddInt64(&duration, int64(stop))
 					atomic.AddUint64(&count, uint64(n))
 					atomic.StoreInt64(&tstop, int64(time.Since(tstart)))
-					time.Sleep(time.Duration(opts.Interval) * time.Millisecond)
+					if opts.Interval != 0 {
+						time.Sleep(time.Duration(opts.Interval) * time.Millisecond)
+					}
 				}
 				return nil
 			}()
