@@ -75,6 +75,7 @@ type Options struct {
 	Stderr         io.Writer
 	Printlog       bool
 	File           string
+	Interval       int64
 }
 
 // DefaultsOptions are the default options used by the Bench() function.
@@ -97,6 +98,7 @@ var DefaultOptions = &Options{
 	Stderr:         os.Stderr,
 	Printlog:       true,
 	File:           "test.txt",
+	Interval:       0,
 }
 
 func getRandomRange(min int, max int) int {
@@ -245,6 +247,7 @@ func Bench(
 					atomic.AddInt64(&duration, int64(stop))
 					atomic.AddUint64(&count, uint64(n))
 					atomic.StoreInt64(&tstop, int64(time.Since(tstart)))
+					time.Sleep(time.Duration(opts.Interval) * time.Millisecond)
 				}
 				return nil
 			}()
@@ -341,7 +344,7 @@ func Bench(
 }
 
 // AppendCommand will append a Redis command to the byte slice and
-// returns a modifed slice.
+// returns a modified slice.
 func AppendCommand(buf []byte, args ...string) []byte {
 	buf = append(buf, '*')
 	buf = strconv.AppendInt(buf, int64(len(args)), 10)
@@ -374,6 +377,7 @@ func helpInfo() {
 	fmt.Println("  -log: print out debugging info?")
 	fmt.Println("  -file: print result to file")
 	fmt.Println("  -h: print out help info?")
+	fmt.Println("  -i: interval for every request (ms)")
 }
 
 func nanoLog(handle nanolog.Handle, args ...interface{}) error {
@@ -405,6 +409,7 @@ func main() {
 	flag.IntVar(&option.Op, "op", 0, "operation type")
 	flag.BoolVar(&option.Printlog, "log", true, "print debugging log?")
 	flag.StringVar(&option.File, "file", "test", "print result to file")
+	flag.Int64Var(&option.Interval, "interval", 0, "interval for every req (ms)")
 
 	flag.Parse()
 
