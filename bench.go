@@ -411,7 +411,7 @@ func main() {
 	flag.IntVar(&option.Op, "op", 0, "operation type")
 	flag.BoolVar(&option.Printlog, "log", true, "print debugging log?")
 	flag.StringVar(&option.File, "file", "test", "print result to file")
-	flag.Int64Var(&option.Interval, "interval", 0, "interval for every req (ms)")
+	flag.Int64Var(&option.Interval, "i", 0, "interval for every req (ms)")
 
 	flag.Parse()
 
