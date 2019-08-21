@@ -76,6 +76,7 @@ type Options struct {
 	Printlog       bool
 	File           string
 	Interval       int64
+	Max            int
 }
 
 // DefaultsOptions are the default options used by the Bench() function.
@@ -99,6 +100,7 @@ var DefaultOptions = &Options{
 	Printlog:       true,
 	File:           "test.txt",
 	Interval:       0,
+	Max:            12,
 }
 
 func getRandomRange(min int, max int) int {
@@ -226,7 +228,7 @@ func Bench(
 					//client.EcSet("key", val)
 					var host string // FIXME: dirty hack... : (
 					if opts.Op == 0 {
-						host, _ = client.EcSet(key, val)
+						host, _ = client.EcSet(key, val, opts.Max)
 					} else {
 						host, _ = client.EcGet(key)
 					}
@@ -380,6 +382,7 @@ func helpInfo() {
 	fmt.Println("  -file: print result to file")
 	fmt.Println("  -h: print out help info?")
 	fmt.Println("  -i: interval for every request (ms)")
+	fmt.Println("	-max: max lambda instance pool")
 }
 
 func nanoLog(handle nanolog.Handle, args ...interface{}) error {
@@ -412,6 +415,7 @@ func main() {
 	flag.BoolVar(&option.Printlog, "log", true, "print debugging log?")
 	flag.StringVar(&option.File, "file", "test", "print result to file")
 	flag.Int64Var(&option.Interval, "i", 0, "interval for every req (ms)")
+	flag.IntVar(&option.Max, "max", 14, "max lambda instance pool")
 
 	flag.Parse()
 
