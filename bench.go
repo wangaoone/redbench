@@ -224,15 +224,13 @@ func Bench(
 					start := time.Now()
 					//_, err := conn.Write(buf)
 					//client.EcSet("key", val)
-					var host string // FIXME: dirty hack... : (
 					if opts.Op == 0 {
-						host, _ = client.EcSet(key, val)
+						_ = client.EcSet(key, val)
 					} else {
-						host, _ = client.EcGet(key)
-					}
-					client.Receive(host)
-					if opts.Op == 1 && opts.Decoding {
-						client.Decoding(client.ChunkArr)
+						reader, ok := client.EcGet(key, len(val))
+						if ok {
+							reader.Close()	// By closing the reader, we save memory.
+						}
 					}
 					/*if err != nil {
 						return err
