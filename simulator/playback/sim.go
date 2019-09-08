@@ -155,7 +155,8 @@ func initProxies(nProxies int, nLambdasPerProxy int) ([]Proxy, *consistent.Consi
 }
 
 func helpInfo() {
-	fmt.Fprintf(os.Stderr, "Usage: ./playback [options] tracefile")
+	fmt.Fprintf(os.Stderr, "Usage: ./playback [options] tracefile\n")
+	fmt.Fprintf(os.Stderr, "Available options:\n")
 	flag.PrintDefaults()
 }
 
