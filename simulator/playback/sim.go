@@ -59,7 +59,7 @@ type Proxy struct {
 type Record struct {
 	Key       string
 	Sz        uint64
-	Timestamp int64
+	Time      time.Time
 }
 
 type Member string
@@ -202,12 +202,16 @@ func main() {
 			panic(err)
 		}
 
-		sz, _ := strconv.ParseFloat(line[9], 64)
-		ts, _ := strconv.ParseInt(line[11], 10, 64)
+		sz, szErr := strconv.ParseFloat(line[9], 64)
+		t, tErr := time.Parse("2006-01-02 03:04:05.000", line[11])
+		if szErr != nil || tErr != nil {
+			log.Warn("Error on parse record, skip %v.", line)
+			continue
+		}
 		rec := &Record{
 			Key:       line[6],
 			Sz:        uint64(sz),
-			Timestamp: ts,
+			Time:      t,
 		}
 
 		if last != nil {
@@ -219,7 +223,7 @@ func main() {
 			}
 			timeout := options.Interval * int64(time.Millisecond)
 			if !options.Compact {
-				timeout = rec.Timestamp - last.Timestamp
+				timeout = int64(rec.Time.Sub(last.Time))
 				if timeout <= 0{
 					timeout = 0
 				} else {
