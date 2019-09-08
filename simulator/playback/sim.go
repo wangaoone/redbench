@@ -179,7 +179,7 @@ func main() {
 
 	flag.Parse()
 
-	if printInfo || flag.NArg() < 3 {
+	if printInfo || flag.NArg() < 1 {
 		helpInfo()
 		os.Exit(0)
 	}
@@ -188,9 +188,9 @@ func main() {
 		log.Level = logger.LOG_LEVEL_INFO
 	}
 
-	traceFile, err := os.Open(flag.Arg(1))
+	traceFile, err := os.Open(flag.Arg(0))
 	if err != nil {
-		log.Error("Failed to open trace file")
+		log.Error("Failed to open trace file: %s", flag.Arg(0))
 		os.Exit(1)
 	}
 	defer traceFile.Close()
