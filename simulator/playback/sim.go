@@ -24,6 +24,7 @@ var (
 	log           = &logger.ColorLogger{
 		Verbose: true,
 		Level: logger.LOG_LEVEL_ALL,
+		Color: true,
 	}
 )
 
