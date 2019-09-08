@@ -197,8 +197,10 @@ func main() {
 	addrArr := strings.Split(options.AddrList, ",")
 	proxies, ring := initProxies(len(addrArr), options.Cluster)
 	client := ecRedis.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
-	client.Dial(addrArr)
-
+	if !option.Dryrun {
+		client.Dial(addrArr)
+	}
+	
 	reader := csv.NewReader(bufio.NewReader(traceFile))
 	timer := time.NewTimer(0)
 	start := time.Now()
