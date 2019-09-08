@@ -20,6 +20,10 @@ import (
 	"time"
 )
 
+const (
+	TIME_PATTERN = "2006-01-02 03:04:05.000"
+)
+
 var (
 	log           = &logger.ColorLogger{
 		Verbose: true,
@@ -229,7 +233,7 @@ func main() {
 		}
 
 		sz, szErr := strconv.ParseFloat(line[9], 64)
-		t, tErr := time.Parse("2006-01-02 03:04:05.000", line[11])
+		t, tErr := time.Parse(TIME_PATTERN, line[11][:len(TIME_PATTERN)])
 		if szErr != nil || tErr != nil {
 			log.Warn("Error on parse record, skip %v.", line)
 			continue
