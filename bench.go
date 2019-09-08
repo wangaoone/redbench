@@ -80,7 +80,7 @@ type Options struct {
 
 // DefaultsOptions are the default options used by the Bench() function.
 var DefaultOptions = &Options{
-	AddrList:       "127.0.0.1:6379",
+	AddrList:       "127.0.0.1:6378",
 	Requests:       15,
 	Clients:        1,
 	Pipeline:       1,
@@ -151,7 +151,7 @@ func Bench(
 	remaining := int64(opts.Clients)
 	errs := make([]error, opts.Clients)
 	durs := make([][]time.Duration, opts.Clients)
-	clients := make([]ecRedis.Client, opts.Clients)
+	clients := make([]*ecRedis.Client, opts.Clients)
 
 	// create all clients
 	for i := 0; i < opts.Clients; i++ {
@@ -196,7 +196,7 @@ func Bench(
 		rand.Read(val)
 
 		//go func(conn net.Conn, client, crequests int) {
-		go func(client ecRedis.Client, cid, crequests int) {
+		go func(client *ecRedis.Client, cid, crequests int) {
 			defer func() {
 				atomic.AddInt64(&remaining, -1)
 			}()
@@ -395,7 +395,7 @@ func main() {
 
 	option := DefaultOptions
 
-	flag.StringVar(&option.AddrList, "addrlist", "127.0.0.1:6379", "server address:port")
+	flag.StringVar(&option.AddrList, "addrlist", "127.0.0.1:6378", "server address:port")
 	flag.IntVar(&option.Requests, "n", 10, "number of requests")
 	flag.IntVar(&option.Clients, "c", 1, "number of clients")
 	flag.IntVar(&option.Pipeline, "pipeline", 1, "number of pipelined requests")
