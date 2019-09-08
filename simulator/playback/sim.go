@@ -46,6 +46,7 @@ type Options struct {
 	Compact        bool
 	Interval       int64
 	Dryrun         bool
+	Lean           bool
 }
 
 type Object struct {
@@ -111,8 +112,11 @@ func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) {
 	} else {
 		// if key does not exist, generate the index array holding
 		// indexes of the destination lambdas
-		val := make([]byte, rec.Sz)
-		rand.Read(val)
+		var val []byte
+		if !opts.Lean {
+			val := make([]byte, rec.Sz)
+			rand.Read(val)
+		}
 		placements := make([]int, opts.Datashard + opts.Parityshard)
 		dryrun := 0
 		if opts.Dryrun {
@@ -184,6 +188,7 @@ func main() {
 	flag.BoolVar(&options.Compact, "compact", true, "playback in compact mode")
 	flag.Int64Var(&options.Interval, "i", 2000, "interval for every req (ms), valid only if compact=true")
 	flag.BoolVar(&options.Dryrun, "dryrun", false, "no actual invocation")
+	flag.BoolVar(&options.Lean, "lean", false, "run with minimum memory consumtion, valid only if dryrun=true")
 
 	flag.Parse()
 
