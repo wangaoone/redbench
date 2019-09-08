@@ -3,10 +3,12 @@ package main
 import (
 	"bufio"
 	"encoding/csv"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/buraksezer/consistent"
 	"github.com/cespare/xxhash"
+	humanize "github.com/dustin/go-humanize"
 	"github.com/wangaoone/LambdaObjectstore/lib/logger"
 	"github.com/wangaoone/ecRedis"
 	"io"
@@ -20,6 +22,7 @@ import (
 
 var (
 	log           = &logger.ColorLogger{
+		Verbose: true,
 		Level: logger.LOG_LEVEL_ALL,
 	}
 )
@@ -87,7 +90,7 @@ func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) {
 	// log.Debug("Key:", rec.Key, "mapped to Proxy:", p.Id)
 	if placements, ok := p.Placements[rec.Key]; ok {
 		// if key exists
-		log.Debug("Get %s.", rec.Key)
+		log.Trace("Get %s.", rec.Key)
 		if !opts.Dryrun {
 			reader, success := client.EcGet(rec.Key, int(rec.Sz))
 			if !success {
@@ -124,7 +127,7 @@ func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) {
 			}
 			p.LambdaPool[idx].MemUsed += rec.Sz / 10
 		}
-		log.Debug("Set %s, placements: %v.", rec.Key, placements)
+		log.Trace("Set %s, placements: %v.", rec.Key, placements)
 	}
 }
 
@@ -185,6 +188,7 @@ func main() {
 	}
 
 	if !options.Printlog {
+		log.Verbose = false
 		log.Level = logger.LOG_LEVEL_INFO
 	}
 
@@ -203,6 +207,14 @@ func main() {
 	}
 
 	reader := csv.NewReader(bufio.NewReader(traceFile))
+	// Skip first line
+	_, err = reader.Read()
+	if err == io.EOF {
+		panic(errors.New(fmt.Sprintf("Empty file: %s", flag.Arg(0))))
+	} else if err != nil {
+		panic(err)
+	}
+
 	timer := time.NewTimer(0)
 	start := time.Now()
 	var startRecord *Record
@@ -244,10 +256,10 @@ func main() {
 				// Use absolute time span for accuracy
 				timeout = int64(rec.Time.Sub(startRecord.Time)) - int64(time.Since(start))
 			}
-			if timeout <= 0{
+			if timeout <= 0 || options.Dryrun {
 				timeout = 0
 			} else {
-				log.Debug("Playback in %v", time.Duration(timeout))
+				log.Info("Playback in %v", time.Duration(timeout))
 			}
 			timer.Reset(time.Duration(timeout))
 		} else {
@@ -255,7 +267,7 @@ func main() {
 		}
 
 		<-timer.C
-		log.Debug("Playbacking %v(exp %v, act %v)...", rec, rec.Time.Sub(startRecord.Time), time.Since(start))
+		log.Info("Playbacking %v(exp %v, act %v)...", rec.Key, rec.Time.Sub(startRecord.Time), time.Since(start))
 		member := ring.LocateKey([]byte(rec.Key))
 		hostId := member.String()
 		id, _ := strconv.Atoi(hostId)
@@ -272,5 +284,5 @@ func main() {
 			maxMem = math.Max(maxMem, float64(lambda.MemUsed))
 		}
 	}
-	log.Debug("Max memory consumed per lambda: %d", maxMem)
+	log.Debug("Max memory consumed per lambda: %s", humanize.Bytes(uint64(maxMem)))
 }
