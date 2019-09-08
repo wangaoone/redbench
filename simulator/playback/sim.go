@@ -37,6 +37,7 @@ type Options struct {
 	File           string
 	Compact        bool
 	Interval       int64
+	Dryrun         bool
 }
 
 type Object struct {
@@ -87,12 +88,14 @@ func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) {
 	if placements, ok := p.Placements[rec.Key]; ok {
 		// if key exists
 		log.Debug("Get %s.", rec.Key)
-		reader, success := client.EcGet(rec.Key, int(rec.Sz))
-		if !success {
-			return
+		if !opts.Dryrun {
+			reader, success := client.EcGet(rec.Key, int(rec.Sz))
+			if !success {
+				return
+			}
+			reader.Close()
 		}
 
-		reader.Close()
 		for _, idx := range placements {
 			obj := p.LambdaPool[idx].Kvs[rec.Key]
 			obj.Freq++
@@ -103,7 +106,11 @@ func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) {
 		val := make([]byte, rec.Sz)
 		rand.Read(val)
 		placements := make([]int, opts.Datashard + opts.Parityshard)
-		success := client.EcSet(rec.Key, val, placements)
+		dryrun := 0
+		if opts.Dryrun {
+			dryrun = opts.Cluster
+		}
+		success := client.EcSet(rec.Key, val, dryrun, placements)
 		if !success {
 			return
 		}
@@ -167,6 +174,7 @@ func main() {
 	flag.StringVar(&options.File, "file", "playback", "print result to file")
 	flag.BoolVar(&options.Compact, "compact", true, "playback in compact mode")
 	flag.Int64Var(&options.Interval, "i", 2000, "interval for every req (ms), valid only if compact=true")
+	flag.BoolVar(&options.Dryrun, "dryrun", false, "no actual invocation")
 
 	flag.Parse()
 
@@ -193,7 +201,9 @@ func main() {
 
 	reader := csv.NewReader(bufio.NewReader(traceFile))
 	timer := time.NewTimer(0)
-	var last *Record
+	start := time.Now()
+	var startRecord *Record
+	var lastRecord *Record
 	for {
 		line, err := reader.Read()
 		if err == io.EOF {
@@ -214,7 +224,7 @@ func main() {
 			Time:      t,
 		}
 
-		if last != nil {
+		if lastRecord != nil {
 			if !timer.Stop() {
 				select {
 				case <-timer.C:
@@ -222,25 +232,33 @@ func main() {
 				}
 			}
 			timeout := options.Interval * int64(time.Millisecond)
-			if !options.Compact {
-				timeout = int64(rec.Time.Sub(last.Time))
-				if timeout <= 0{
-					timeout = 0
-				} else {
-					log.Debug("Playback in %v", time.Duration(timeout))
+			if options.Compact {
+				next := int64(rec.Time.Sub(lastRecord.Time))
+				if next < timeout {
+					timeout = next
 				}
+			} else {
+				// Use absolute time span for accuracy
+				timeout = int64(rec.Time.Sub(startRecord.Time)) - int64(time.Since(start))
+			}
+			if timeout <= 0{
+				timeout = 0
+			} else {
+				log.Debug("Playback in %v", time.Duration(timeout))
 			}
 			timer.Reset(time.Duration(timeout))
+		} else {
+			startRecord = rec
 		}
 
 		<-timer.C
-		log.Debug("Playbacking %v...", rec)
+		log.Debug("Playbacking %v(exp %v, act %v)...", rec, rec.Time.Sub(startRecord.Time), time.Since(start))
 		member := ring.LocateKey([]byte(rec.Key))
 		hostId := member.String()
 		id, _ := strconv.Atoi(hostId)
 		perform(options, client, &proxies[id], rec)
 
-		last = rec
+		lastRecord = rec
 	}
 
 	maxMem := float64(0)
