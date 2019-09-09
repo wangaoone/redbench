@@ -88,13 +88,6 @@ func (h hasher) Sum64(data []byte) uint64 {
 	return xxhash.Sum64(data)
 }
 
-// random will generate random sequence within the lambda stores
-// index and get top n id
-func random(numLambdas int, numChunks int) []int {
-	rand.Seed(time.Now().UnixNano())
-	return rand.Perm(300)[:numChunks]
-}
-
 func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) {
 	// log.Debug("Key:", rec.Key, "mapped to Proxy:", p.Id)
 	if placements, ok := p.Placements[rec.Key]; ok {
@@ -300,13 +293,18 @@ func main() {
 
 	maxMem := float64(0)
 	minMem := float64(options.MaxSz)
+	maxChunks := float64(0)
+	minChunks := float64(1000)
 	for i := 0; i < len(proxies); i++ {
 		proxy := &proxies[i]
 		for j := 0; j < len(proxy.LambdaPool); j++ {
 			lambda := &proxy.LambdaPool[j]
-			maxMem = math.Max(maxMem, float64(lambda.MemUsed))
 			minMem = math.Min(minMem, float64(lambda.MemUsed))
+			maxMem = math.Max(maxMem, float64(lambda.MemUsed))
+			minChunks = math.Min(minChunks, float64(len(lambda.Kvs)))
+			maxChunks = math.Max(maxChunks, float64(len(lambda.Kvs)))
 		}
 	}
-	log.Debug("Max memory consumed per lambda: %s - %s", humanize.Bytes(uint64(minMem)), humanize.Bytes(uint64(maxMem)))
+	log.Info("Memory consumed per lambda: %s - %s", humanize.Bytes(uint64(minMem)), humanize.Bytes(uint64(maxMem)))
+	log.Info("Chunks per lambda: %d - %d", int(minChunks), int(maxChunks))
 }
