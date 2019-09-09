@@ -48,6 +48,7 @@ type Options struct {
 	Interval       int64
 	Dryrun         bool
 	Lean           bool
+	MaxSz          uint64
 }
 
 type Object struct {
@@ -190,6 +191,7 @@ func main() {
 	flag.Int64Var(&options.Interval, "i", 2000, "interval for every req (ms), valid only if compact=true")
 	flag.BoolVar(&options.Dryrun, "dryrun", false, "no actual invocation")
 	flag.BoolVar(&options.Lean, "lean", false, "run with minimum memory consumtion, valid only if dryrun=true")
+	flag.Uint64Var(&options.MaxSz, "maxsz", 2147483648, "max object size")
 
 	flag.Parse()
 
@@ -251,6 +253,9 @@ func main() {
 			Key:       line[6],
 			Sz:        uint64(sz),
 			Time:      t,
+		}
+		if rec.Sz > options.MaxSz {
+			rec.Sz = options.MaxSz
 		}
 
 		if lastRecord != nil {
