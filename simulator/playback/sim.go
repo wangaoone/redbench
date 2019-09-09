@@ -299,12 +299,14 @@ func main() {
 	}
 
 	maxMem := float64(0)
+	minMem := float64(options.MaxSz)
 	for i := 0; i < len(proxies); i++ {
 		proxy := &proxies[i]
 		for j := 0; j < len(proxy.LambdaPool); j++ {
 			lambda := &proxy.LambdaPool[j]
 			maxMem = math.Max(maxMem, float64(lambda.MemUsed))
+			minMem = math.Min(minMem, float64(lambda.MemUsed))
 		}
 	}
-	log.Debug("Max memory consumed per lambda: %s", humanize.Bytes(uint64(maxMem)))
+	log.Debug("Max memory consumed per lambda: %s - %s", humanize.Bytes(uint64(minMem)), humanize.Bytes(uint64(maxMem)))
 }
