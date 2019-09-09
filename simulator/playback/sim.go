@@ -49,6 +49,7 @@ type Options struct {
 	Dryrun         bool
 	Lean           bool
 	MaxSz          uint64
+	ScaleSz        float64
 }
 
 type Object struct {
@@ -192,6 +193,7 @@ func main() {
 	flag.BoolVar(&options.Dryrun, "dryrun", false, "no actual invocation")
 	flag.BoolVar(&options.Lean, "lean", false, "run with minimum memory consumtion, valid only if dryrun=true")
 	flag.Uint64Var(&options.MaxSz, "maxsz", 2147483648, "max object size")
+	flag.Float64Var(&options.ScaleSz, "scalesz", 1, "scale object size")
 
 	flag.Parse()
 
@@ -257,6 +259,7 @@ func main() {
 		if rec.Sz > options.MaxSz {
 			rec.Sz = options.MaxSz
 		}
+		rec.Sz = uint64(float64(rec.Sz) * options.ScaleSz)
 
 		if lastRecord != nil {
 			if !timer.Stop() {
