@@ -110,7 +110,7 @@ func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) {
 		// indexes of the destination lambdas
 		var val []byte
 		if !opts.Lean {
-			val := make([]byte, rec.Sz)
+			val = make([]byte, rec.Sz)
 			rand.Read(val)
 		}
 		placements := make([]int, opts.Datashard + opts.Parityshard)
