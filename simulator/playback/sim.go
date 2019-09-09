@@ -21,7 +21,8 @@ import (
 )
 
 const (
-	TIME_PATTERN = "2006-01-02 03:04:05.000"
+	TIME_PATTERN = "2006-01-02 15:04:05.000"
+	TIME_PATTERN2 = "2006-01-02 15:04:05"
 )
 
 var (
@@ -239,8 +240,11 @@ func main() {
 
 		sz, szErr := strconv.ParseFloat(line[9], 64)
 		t, tErr := time.Parse(TIME_PATTERN, line[11][:len(TIME_PATTERN)])
+		if tErr != nil {
+			t, tErr = time.Parse(TIME_PATTERN2, line[11][:len(TIME_PATTERN2)])
+		}
 		if szErr != nil || tErr != nil {
-			log.Warn("Error on parse record, skip %v.", line)
+			log.Warn("Error on parse record, skip %v: %v, %v", line, szErr, tErr)
 			continue
 		}
 		rec := &Record{
