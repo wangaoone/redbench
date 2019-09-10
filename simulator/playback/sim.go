@@ -56,6 +56,7 @@ type Object struct {
 	Key  string
 	Sz   uint64
 	Freq uint64
+	Reset uint64
 }
 
 type Lambda struct {
@@ -91,15 +92,37 @@ func (h hasher) Sum64(data []byte) uint64 {
 func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) {
 	// log.Debug("Key:", rec.Key, "mapped to Proxy:", p.Id)
 	if placements, ok := p.Placements[rec.Key]; ok {
-		// if key exists
-		log.Trace("Get %s.", rec.Key)
 		if !opts.Dryrun {
 			reader, success := client.EcGet(rec.Key, int(rec.Sz))
 			if !success {
+				val := make([]byte, rec.Sz)
+				rand.Read(val)
+				resetPlacements := make([]int, opts.Datashard + opts.Parityshard)
+				reset := client.EcSet(rec.Key, val, 0, resetPlacements)
+				if reset {
+					log.Trace("Reset %s.", rec.Key)
+					displaced := false
+					for i, idx := range resetPlacements {
+						obj, exists := p.LambdaPool[idx].Kvs[rec.Key]
+						if !exists {
+							displaced = true
+							log.Warn("Placement changed on reset %s, %d -> %d", rec.Key, placements[i], idx)
+							obj = p.LambdaPool[placements[i]].Kvs[rec.Key]
+							delete(p.LambdaPool[placements[i]].Kvs, rec.Key)
+							p.LambdaPool[idx].Kvs[rec.Key] = obj
+							p.LambdaPool[idx].MemUsed += obj.Sz
+						}
+						obj.Reset++
+					}
+					if displaced {
+						p.Placements[rec.Key] = resetPlacements
+					}
+				}
 				return
 			}
 			reader.Close()
 		}
+		log.Trace("Get %s.", rec.Key)
 
 		for _, idx := range placements {
 			obj := p.LambdaPool[idx].Kvs[rec.Key]
@@ -125,12 +148,13 @@ func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) {
 
 		p.Placements[rec.Key] = placements
 		for _, idx := range placements {
-			p.LambdaPool[idx].Kvs[rec.Key] = &Object{
+			obj := &Object{
 				Key:  rec.Key,
-				Sz:   rec.Sz / 10,
+				Sz:   rec.Sz / uint64(opts.Datashard),
 				Freq: 0,
 			}
-			p.LambdaPool[idx].MemUsed += rec.Sz / 10
+			p.LambdaPool[idx].Kvs[rec.Key] = obj
+			p.LambdaPool[idx].MemUsed += obj.Sz
 		}
 		log.Trace("Set %s, placements: %v.", rec.Key, placements)
 	}
@@ -295,6 +319,9 @@ func main() {
 	minMem := float64(options.MaxSz)
 	maxChunks := float64(0)
 	minChunks := float64(1000)
+	set := 0
+	got := uint64(0)
+	reset := uint64(0)
 	for i := 0; i < len(proxies); i++ {
 		proxy := &proxies[i]
 		for j := 0; j < len(proxy.LambdaPool); j++ {
@@ -303,8 +330,14 @@ func main() {
 			maxMem = math.Max(maxMem, float64(lambda.MemUsed))
 			minChunks = math.Min(minChunks, float64(len(lambda.Kvs)))
 			maxChunks = math.Max(maxChunks, float64(len(lambda.Kvs)))
+			set += len(lambda.Kvs)
+			for _, obj := range lambda.Kvs {
+				got += obj.Freq
+				reset += obj.Reset
+			}
 		}
 	}
 	log.Info("Memory consumed per lambda: %s - %s", humanize.Bytes(uint64(minMem)), humanize.Bytes(uint64(maxMem)))
 	log.Info("Chunks per lambda: %d - %d", int(minChunks), int(maxChunks))
+	log.Info("Set %d, Got %d, Reset %d", set, got, reset)
 }
