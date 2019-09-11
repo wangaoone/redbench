@@ -225,9 +225,9 @@ func Bench(
 					//_, err := conn.Write(buf)
 					//client.EcSet("key", val)
 					if opts.Op == 0 {
-						_ = client.EcSet(key, val)
+						client.EcSet(key, val)
 					} else {
-						reader, ok := client.EcGet(key, len(val))
+						_, reader, ok := client.EcGet(key, len(val))
 						if ok {
 							reader.Close()	// By closing the reader, we save memory.
 						}

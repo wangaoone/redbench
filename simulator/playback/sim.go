@@ -89,37 +89,40 @@ func (h hasher) Sum64(data []byte) uint64 {
 	return xxhash.Sum64(data)
 }
 
-func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) {
+func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) string {
+	dryrun := 0
+	if opts.Dryrun {
+		dryrun = opts.Cluster
+	}
 	// log.Debug("Key:", rec.Key, "mapped to Proxy:", p.Id)
 	if placements, ok := p.Placements[rec.Key]; ok {
-		if !opts.Dryrun {
-			reader, success := client.EcGet(rec.Key, int(rec.Sz))
-			if !success {
-				val := make([]byte, rec.Sz)
-				rand.Read(val)
-				resetPlacements := make([]int, opts.Datashard + opts.Parityshard)
-				reset := client.EcSet(rec.Key, val, 0, resetPlacements)
-				if reset {
-					log.Trace("Reset %s.", rec.Key)
-					displaced := false
-					for i, idx := range resetPlacements {
-						obj, exists := p.LambdaPool[idx].Kvs[rec.Key]
-						if !exists {
-							displaced = true
-							log.Warn("Placement changed on reset %s, %d -> %d", rec.Key, placements[i], idx)
-							obj = p.LambdaPool[placements[i]].Kvs[rec.Key]
-							delete(p.LambdaPool[placements[i]].Kvs, rec.Key)
-							p.LambdaPool[idx].Kvs[rec.Key] = obj
-							p.LambdaPool[idx].MemUsed += obj.Sz
-						}
-						obj.Reset++
+		reqId, reader, success := client.EcGet(rec.Key, int(rec.Sz), dryrun)
+		if !success {
+			val := make([]byte, rec.Sz)
+			rand.Read(val)
+			resetPlacements := make([]int, opts.Datashard + opts.Parityshard)
+			_, reset := client.EcSet(rec.Key, val, 0, resetPlacements)
+			if reset {
+				log.Trace("Reset %s.", rec.Key)
+				displaced := false
+				for i, idx := range resetPlacements {
+					obj, exists := p.LambdaPool[idx].Kvs[rec.Key]
+					if !exists {
+						displaced = true
+						log.Warn("Placement changed on reset %s, %d -> %d", rec.Key, placements[i], idx)
+						obj = p.LambdaPool[placements[i]].Kvs[rec.Key]
+						delete(p.LambdaPool[placements[i]].Kvs, rec.Key)
+						p.LambdaPool[idx].Kvs[rec.Key] = obj
+						p.LambdaPool[idx].MemUsed += obj.Sz
 					}
-					if displaced {
-						p.Placements[rec.Key] = resetPlacements
-					}
+					obj.Reset++
 				}
-				return
+				if displaced {
+					p.Placements[rec.Key] = resetPlacements
+				}
 			}
+			return reqId
+		} else if reader != nil {
 			reader.Close()
 		}
 		log.Trace("Get %s.", rec.Key)
@@ -128,6 +131,7 @@ func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) {
 			obj := p.LambdaPool[idx].Kvs[rec.Key]
 			obj.Freq++
 		}
+		return reqId
 	} else {
 		// if key does not exist, generate the index array holding
 		// indexes of the destination lambdas
@@ -141,9 +145,9 @@ func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) {
 		if opts.Dryrun {
 			dryrun = opts.Cluster
 		}
-		success := client.EcSet(rec.Key, val, dryrun, placements)
+		reqId, success := client.EcSet(rec.Key, val, dryrun, placements)
 		if !success {
-			return
+			return reqId
 		}
 
 		p.Placements[rec.Key] = placements
@@ -157,6 +161,7 @@ func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) {
 			p.LambdaPool[idx].MemUsed += obj.Sz
 		}
 		log.Trace("Set %s, placements: %v.", rec.Key, placements)
+		return reqId
 	}
 }
 
@@ -310,7 +315,8 @@ func main() {
 		member := ring.LocateKey([]byte(rec.Key))
 		hostId := member.String()
 		id, _ := strconv.Atoi(hostId)
-		perform(options, client, &proxies[id], rec)
+		reqId := perform(options, client, &proxies[id], rec)
+		log.Debug("csv,%s,%s,%d,%d", reqId, rec.Key, int64(rec.Time.Sub(startRecord.Time)), int64(time.Since(start)))
 
 		lastRecord = rec
 	}
