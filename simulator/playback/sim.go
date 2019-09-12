@@ -321,6 +321,7 @@ func main() {
 		lastRecord = rec
 	}
 
+	totalMem := float64(0)
 	maxMem := float64(0)
 	minMem := float64(options.MaxSz)
 	maxChunks := float64(0)
@@ -332,6 +333,7 @@ func main() {
 		proxy := &proxies[i]
 		for j := 0; j < len(proxy.LambdaPool); j++ {
 			lambda := &proxy.LambdaPool[j]
+			totalMem += float64(lambda.MemUsed)
 			minMem = math.Min(minMem, float64(lambda.MemUsed))
 			maxMem = math.Max(maxMem, float64(lambda.MemUsed))
 			minChunks = math.Min(minChunks, float64(len(lambda.Kvs)))
@@ -343,6 +345,7 @@ func main() {
 			}
 		}
 	}
+	log.Info("Total memory consumed: %s", humanize.Bytes(uint64(totalMem)))
 	log.Info("Memory consumed per lambda: %s - %s", humanize.Bytes(uint64(minMem)), humanize.Bytes(uint64(maxMem)))
 	log.Info("Chunks per lambda: %d - %d", int(minChunks), int(maxChunks))
 	log.Info("Set %d, Got %d, Reset %d", set, got, reset)
