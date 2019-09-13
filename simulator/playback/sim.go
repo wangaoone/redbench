@@ -210,7 +210,7 @@ func main() {
 	flag.IntVar(&options.ECmaxgoroutine, "g", 32, "max number of goroutines for RS erasure coding")
 	flag.BoolVar(&options.Printlog, "log", true, "print debugging log?")
 	flag.StringVar(&options.File, "file", "playback", "print result to file")
-	flag.BoolVar(&options.Compact, "compact", true, "playback in compact mode")
+	flag.BoolVar(&options.Compact, "compact", false, "playback in compact mode")
 	flag.Int64Var(&options.Interval, "i", 2000, "interval for every req (ms), valid only if compact=true")
 	flag.BoolVar(&options.Dryrun, "dryrun", false, "no actual invocation")
 	flag.BoolVar(&options.Lean, "lean", false, "run with minimum memory consumtion, valid only if dryrun=true")
