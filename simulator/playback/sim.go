@@ -50,6 +50,7 @@ type Options struct {
 	Lean           bool
 	MaxSz          uint64
 	ScaleSz        float64
+	Skip           int64
 }
 
 type Object struct {
@@ -89,7 +90,7 @@ func (h hasher) Sum64(data []byte) uint64 {
 	return xxhash.Sum64(data)
 }
 
-func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) string {
+func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) (string, string) {
 	dryrun := 0
 	if opts.Dryrun {
 		dryrun = opts.Cluster
@@ -121,7 +122,7 @@ func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) strin
 					p.Placements[rec.Key] = resetPlacements
 				}
 			}
-			return reqId
+			return "get", reqId
 		} else if reader != nil {
 			reader.Close()
 		}
@@ -131,7 +132,7 @@ func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) strin
 			obj := p.LambdaPool[idx].Kvs[rec.Key]
 			obj.Freq++
 		}
-		return reqId
+		return "get", reqId
 	} else {
 		// if key does not exist, generate the index array holding
 		// indexes of the destination lambdas
@@ -147,7 +148,7 @@ func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) strin
 		}
 		reqId, success := client.EcSet(rec.Key, val, dryrun, placements)
 		if !success {
-			return reqId
+			return "set", reqId
 		}
 
 		p.Placements[rec.Key] = placements
@@ -161,7 +162,7 @@ func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) strin
 			p.LambdaPool[idx].MemUsed += obj.Sz
 		}
 		log.Trace("Set %s, placements: %v.", rec.Key, placements)
-		return reqId
+		return "set", reqId
 	}
 }
 
@@ -216,6 +217,7 @@ func main() {
 	flag.BoolVar(&options.Lean, "lean", false, "run with minimum memory consumtion, valid only if dryrun=true")
 	flag.Uint64Var(&options.MaxSz, "maxsz", 2147483648, "max object size")
 	flag.Float64Var(&options.ScaleSz, "scalesz", 1, "scale object size")
+	flag.Int64Var(&options.Skip, "skip", 0, "skip N records")
 
 	flag.Parse()
 
@@ -254,6 +256,8 @@ func main() {
 
 	timer := time.NewTimer(0)
 	start := time.Now()
+	read := int64(0)
+	var skipedDuration time.Duration
 	var startRecord *Record
 	var lastRecord *Record
 	for {
@@ -290,35 +294,49 @@ func main() {
 				default:
 				}
 			}
-			timeout := options.Interval * int64(time.Millisecond)
+			timeout := time.Duration(options.Interval) * time.Millisecond
 			if options.Compact {
-				next := int64(rec.Time.Sub(lastRecord.Time))
+				next := rec.Time.Sub(lastRecord.Time)
 				if next < timeout {
 					timeout = next
 				}
 			} else {
 				// Use absolute time span for accuracy
-				timeout = int64(rec.Time.Sub(startRecord.Time)) - int64(time.Since(start))
+				timeout = rec.Time.Sub(startRecord.Time) - skipedDuration - time.Since(start)
 			}
-			if timeout <= 0 || options.Dryrun {
+			if timeout <= 0 || (options.Dryrun && options.Compact) {
 				timeout = 0
-			} else {
-				log.Info("Playback in %v", time.Duration(timeout))
 			}
-			timer.Reset(time.Duration(timeout))
+
+			// On skiping, use elapsed to record time.
+			if read >= options.Skip {
+				if timeout > 0 {
+					log.Info("Playback in %v", timeout)
+				}
+				timer.Reset(timeout)
+			} else {
+				skipedDuration += timeout
+				if timeout > 0 {
+					log.Info("Skip %v", timeout)
+				}
+			}
 		} else {
 			startRecord = rec
 		}
 
-		<-timer.C
-		log.Info("Playbacking %v(exp %v, act %v)...", rec.Key, rec.Time.Sub(startRecord.Time), time.Since(start))
-		member := ring.LocateKey([]byte(rec.Key))
-		hostId := member.String()
-		id, _ := strconv.Atoi(hostId)
-		reqId := perform(options, client, &proxies[id], rec)
-		log.Debug("csv,%s,%s,%d,%d", reqId, rec.Key, int64(rec.Time.Sub(startRecord.Time)), int64(time.Since(start)))
+		var reqId string
+		if read >= options.Skip {
+			<-timer.C
+			log.Info("Playbacking %v(exp %v, act %v)...", rec.Key, rec.Time.Sub(startRecord.Time), skipedDuration + time.Since(start))
+			member := ring.LocateKey([]byte(rec.Key))
+			hostId := member.String()
+			id, _ := strconv.Atoi(hostId)
+			_, reqId = perform(options, client, &proxies[id], rec)
+			log.Debug("csv,%s,%s,%d,%d", reqId, rec.Key, int64(rec.Time.Sub(startRecord.Time)), int64(skipedDuration + time.Since(start)))
+		}
 
 		lastRecord = rec
+		read++
 	}
 
 	totalMem := float64(0)
