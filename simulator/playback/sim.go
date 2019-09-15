@@ -311,13 +311,13 @@ func main() {
 			// On skiping, use elapsed to record time.
 			if read >= options.Skip {
 				if timeout > 0 {
-					log.Info("Playback in %v", timeout)
+					log.Info("Playback %d in %v", read + 1, timeout)
 				}
 				timer.Reset(timeout)
 			} else {
 				skipedDuration += timeout
 				if timeout > 0 {
-					log.Info("Skip %v", timeout)
+					log.Info("Skip %d: %v", read + 1, timeout)
 				}
 			}
 		} else {
@@ -327,7 +327,7 @@ func main() {
 		var reqId string
 		if read >= options.Skip {
 			<-timer.C
-			log.Info("Playbacking %v(exp %v, act %v)...", rec.Key, rec.Time.Sub(startRecord.Time), skipedDuration + time.Since(start))
+			log.Info("%d Playbacking %v(exp %v, act %v)...", read + 1, rec.Key, rec.Time.Sub(startRecord.Time), skipedDuration + time.Since(start))
 			member := ring.LocateKey([]byte(rec.Key))
 			hostId := member.String()
 			id, _ := strconv.Atoi(hostId)
