@@ -51,6 +51,12 @@ type Options struct {
 	MaxSz          uint64
 	ScaleSz        float64
 	Skip           int64
+	S3             string
+}
+
+type Client interface {
+	EcSet(string, []byte, ...interface{}) (string, bool)
+	EcGet(string, int, ...interface{}) (string, io.ReadCloser, bool)
 }
 
 type Object struct {
@@ -90,7 +96,7 @@ func (h hasher) Sum64(data []byte) uint64 {
 	return xxhash.Sum64(data)
 }
 
-func perform(opts *Options, client *ecRedis.Client, p *Proxy, rec *Record) (string, string) {
+func perform(opts *Options, client Client, p *Proxy, rec *Record) (string, string) {
 	dryrun := 0
 	if opts.Dryrun {
 		dryrun = opts.Cluster
@@ -218,6 +224,7 @@ func main() {
 	flag.Uint64Var(&options.MaxSz, "maxsz", 2147483648, "max object size")
 	flag.Float64Var(&options.ScaleSz, "scalesz", 1, "scale object size")
 	flag.Int64Var(&options.Skip, "skip", 0, "skip N records")
+	flag.StringVar(&options.S3, "s3", "", "s3 bucket for enable s3 simulation")
 
 	flag.Parse()
 
@@ -240,10 +247,16 @@ func main() {
 
 	addrArr := strings.Split(options.AddrList, ",")
 	proxies, ring := initProxies(len(addrArr), options.Cluster)
-	client := ecRedis.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
-	if !options.Dryrun {
-		client.Dial(addrArr)
+	var client Client
+	if options.S3 != "" {
+		client = NewS3Client(options.S3)
+	} else {
+		client := ecRedis.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
+		if !options.Dryrun {
+			client.Dial(addrArr)
+		}
 	}
+
 
 	reader := csv.NewReader(bufio.NewReader(traceFile))
 	// Skip first line
