@@ -62,7 +62,7 @@ func (c *S3Client) EcSet(key string, val []byte, args ...interface{}) (string, b
 		c.log.Error("failed to upload file: %v", err)
 		return reqId, false
 	}
-	c.log.Info("Set %s %v", key, time.Since(start))
+	c.log.Info("Set %s %d", key, int64(time.Since(start)))
 
 	return reqId, true
 }
@@ -98,7 +98,7 @@ func (c *S3Client) EcGet(key string, size int, args ...interface{}) (string, io.
 	    c.log.Error("failed to download file: %v", err)
 			return reqId, nil, false
 	}
-	c.log.Info("Set %s %v", key, time.Since(start))
+	c.log.Info("Get %s %d", key, int64(time.Since(start)))
 
 	data := buff.Bytes()
 	return reqId, ioutil.NopCloser(bytes.NewReader(data)), true
