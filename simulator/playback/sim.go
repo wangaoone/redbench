@@ -257,7 +257,7 @@ func main() {
 	} else {
 		client = ecRedis.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
 		if !options.Dryrun {
-			client.Dial(addrArr)
+			client.(*ecRedis.Client).Dial(addrArr)
 		}
 	}
 
