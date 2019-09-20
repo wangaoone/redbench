@@ -255,7 +255,7 @@ func main() {
 	} else if options.Redis != "" {
 		client = NewRedisClient(options.Redis)
 	} else {
-		client := ecRedis.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
+		client = ecRedis.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
 		if !options.Dryrun {
 			client.Dial(addrArr)
 		}
