@@ -53,6 +53,7 @@ type Options struct {
 	Skip           int64
 	S3             string
 	Redis          string
+	RedisCluster	bool
 }
 
 type Client interface {
@@ -227,6 +228,7 @@ func main() {
 	flag.Int64Var(&options.Skip, "skip", 0, "skip N records")
 	flag.StringVar(&options.S3, "s3", "", "s3 bucket for enable s3 simulation")
 	flag.StringVar(&options.Redis, "redis", "", "Redis for enable Redis simulation")
+	flag.BoolVar(&options.RedisCluster, "redisCluster", false, "redisCluster for enable Redis simulation")
 
 	flag.Parse()
 
@@ -254,6 +256,8 @@ func main() {
 		client = NewS3Client(options.S3)
 	} else if options.Redis != "" {
 		client = NewRedisClient(options.Redis)
+	} else if options.RedisCluster == true{
+		client = NewClusterRedisClient()
 	} else {
 		client = ecRedis.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
 		if !options.Dryrun {
