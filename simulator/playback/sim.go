@@ -71,6 +71,17 @@ type Object struct {
 type Lambda struct {
 	Kvs     map[string]*Object
 	MemUsed uint64
+	ActiveMinites int
+	LastActive time.Time
+}
+
+func (l *Lambda) Activate(recTime time.Time) {
+	if l.ActiveMinites == 0  {
+		l.ActiveMinites++
+	} else if recTime.Sub(l.LastActive) >= time.Minute {
+		l.ActiveMinites++
+	}
+	l.LastActive = recTime
 }
 
 type Proxy struct {
@@ -139,6 +150,7 @@ func perform(opts *Options, client Client, p *Proxy, rec *Record) (string, strin
 		for _, idx := range placements {
 			obj := p.LambdaPool[idx].Kvs[rec.Key]
 			obj.Freq++
+			(&p.LambdaPool[idx]).Activate(rec.Time)
 		}
 		return "get", reqId
 	} else {
@@ -168,6 +180,7 @@ func perform(opts *Options, client Client, p *Proxy, rec *Record) (string, strin
 			}
 			p.LambdaPool[idx].Kvs[rec.Key] = obj
 			p.LambdaPool[idx].MemUsed += obj.Sz
+			(&p.LambdaPool[idx]).Activate(rec.Time)
 		}
 		log.Trace("Set %s, placements: %v.", rec.Key, placements)
 		return "set", reqId
@@ -368,6 +381,7 @@ func main() {
 	set := 0
 	got := uint64(0)
 	reset := uint64(0)
+	activated := 0
 	for i := 0; i < len(proxies); i++ {
 		proxy := &proxies[i]
 		for j := 0; j < len(proxy.LambdaPool); j++ {
@@ -382,10 +396,12 @@ func main() {
 				got += obj.Freq
 				reset += obj.Reset
 			}
+			activated += lambda.ActiveMinites
 		}
 	}
 	log.Info("Total memory consumed: %s", humanize.Bytes(uint64(totalMem)))
 	log.Info("Memory consumed per lambda: %s - %s", humanize.Bytes(uint64(minMem)), humanize.Bytes(uint64(maxMem)))
 	log.Info("Chunks per lambda: %d - %d", int(minChunks), int(maxChunks))
 	log.Info("Set %d, Got %d, Reset %d", set, got, reset)
+	log.Info("Active Minutes %d", activated)
 }
