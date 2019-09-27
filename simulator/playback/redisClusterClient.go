@@ -16,19 +16,57 @@ type RedisClusterClient struct {
 }
 
 func newClusterSession() *redis.ClusterClient {
+	clusterSlots := func() ([]redis.ClusterSlot, error) {
+		slots := []redis.ClusterSlot{
+			// First node with 1 master and 1 slave.
+			{
+				Start: 0,
+				End:   3276,
+				Nodes: []redis.ClusterNode{{
+					Addr: "trace1.lqm2mp.ng.0001.use1.cache.amazonaws.com:6379",
+				}},
+			},
+			// Second node with 1 master and 1 slave.
+			{
+				Start: 3277,
+				End:   6553,
+				Nodes: []redis.ClusterNode{{
+					Addr: "trace2.lqm2mp.ng.0001.use1.cache.amazonaws.com:6379",
+				}},
+			},
+			{
+				Start: 6554,
+				End:   9830,
+				Nodes: []redis.ClusterNode{{
+					Addr: "trace3.lqm2mp.ng.0001.use1.cache.amazonaws.com:6379", // master
+				}},
+			},
+			{
+				Start: 9831,
+				End:   13107,
+				Nodes: []redis.ClusterNode{{
+					Addr: "trace4.lqm2mp.ng.0001.use1.cache.amazonaws.com:6379", // master
+				}},
+			},
+			{
+				Start: 13108,
+				End:   16383,
+				Nodes: []redis.ClusterNode{{
+					Addr: "trace5.lqm2mp.ng.0001.use1.cache.amazonaws.com:6379", // master
+				}},
+			},
+		}
+		return slots, nil
+	}
 	client := redis.NewClusterClient(&redis.ClusterOptions{
-		Addrs: []string{
-			"trace-0001-001.lqm2mp.0001.use1.cache.amazonaws.com:6379",
-			"trace-0002-001.lqm2mp.0001.use1.cache.amazonaws.com:6379",
-			"trace-0003-001.lqm2mp.0001.use1.cache.amazonaws.com:6379",
-			"trace-0004-001.lqm2mp.0001.use1.cache.amazonaws.com:6379",
-			"trace-0005-001.lqm2mp.0001.use1.cache.amazonaws.com:6379",
-			"trace-0006-001.lqm2mp.0001.use1.cache.amazonaws.com:6379",
-			"trace-0007-001.lqm2mp.0001.use1.cache.amazonaws.com:6379",
-			"trace-0008-001.lqm2mp.0001.use1.cache.amazonaws.com:6379",
-			"trace-0009-001.lqm2mp.0001.use1.cache.amazonaws.com:6379",
-			"trace-0010-001.lqm2mp.0001.use1.cache.amazonaws.com:6379"},
-		Password: "", // no password set
+		ClusterSlots:  clusterSlots,
+		RouteRandomly: true,
+		//Addrs: []string{
+		//	"trace-0001-001.lqm2mp.0001.use1.cache.amazonaws.com:6379",
+		//	"trace-0002-001.lqm2mp.0001.use1.cache.amazonaws.com:6379",
+		//	"trace-0003-001.lqm2mp.0001.use1.cache.amazonaws.com:6379",
+		//	"trace-0004-001.lqm2mp.0001.use1.cache.amazonaws.com:6379",
+		//	"trace-0005-001.lqm2mp.0001.use1.cache.amazonaws.com:6379"},
 	})
 	//client.Ping()
 	return client
