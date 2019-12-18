@@ -241,7 +241,7 @@ func main() {
 	flag.BoolVar(&options.Dryrun, "dryrun", false, "no actual invocation")
 	flag.BoolVar(&options.Lean, "lean", false, "run with minimum memory consumtion, valid only if dryrun=true")
 	flag.Uint64Var(&options.MaxSz, "maxsz", 2147483648, "max object size")
-	flag.Uint64Var(&options.ScaleFrom, "scalefrom", 1048760, "objects larger than this size will be scaled")
+	flag.Uint64Var(&options.ScaleFrom, "scalefrom", 104857600, "objects larger than this size will be scaled")
 	flag.Float64Var(&options.ScaleSz, "scalesz", 1, "scale object size")
 	flag.Int64Var(&options.Skip, "skip", 0, "skip N records")
 	flag.StringVar(&options.S3, "s3", "", "s3 bucket for enable s3 simulation")
