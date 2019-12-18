@@ -12,6 +12,7 @@ import (
 	"github.com/wangaoone/LambdaObjectstore/lib/logger"
 	"github.com/wangaoone/ecRedis"
 	"io"
+	syslog "log"
 	"math"
 	"math/rand"
 	"os"
@@ -42,13 +43,15 @@ type Options struct {
 	CSV            bool
 	Stdout         io.Writer
 	Stderr         io.Writer
-	Printlog       bool
+	NoDebug        bool
+	SummaryOnly    bool
 	File           string
 	Compact        bool
 	Interval       int64
 	Dryrun         bool
 	Lean           bool
 	MaxSz          uint64
+	ScaleFrom      uint64
 	ScaleSz        float64
 	Skip           int64
 	S3             string
@@ -230,13 +233,15 @@ func main() {
 	flag.IntVar(&options.Datashard, "d", 4, "number of data shards for RS erasure coding")
 	flag.IntVar(&options.Parityshard, "p", 2, "number of parity shards for RS erasure coding")
 	flag.IntVar(&options.ECmaxgoroutine, "g", 32, "max number of goroutines for RS erasure coding")
-	flag.BoolVar(&options.Printlog, "log", true, "print debugging log?")
+	flag.BoolVar(&options.NoDebug, "disable-debug", false, "disable printing debugging log?")
+	flag.BoolVar(&options.SummaryOnly, "summary-only", false, "show summary only")
 	flag.StringVar(&options.File, "file", "playback", "print result to file")
 	flag.BoolVar(&options.Compact, "compact", false, "playback in compact mode")
 	flag.Int64Var(&options.Interval, "i", 2000, "interval for every req (ms), valid only if compact=true")
 	flag.BoolVar(&options.Dryrun, "dryrun", false, "no actual invocation")
 	flag.BoolVar(&options.Lean, "lean", false, "run with minimum memory consumtion, valid only if dryrun=true")
 	flag.Uint64Var(&options.MaxSz, "maxsz", 2147483648, "max object size")
+	flag.Uint64Var(&options.ScaleFrom, "scalefrom", 1048760, "objects larger than this size will be scaled")
 	flag.Float64Var(&options.ScaleSz, "scalesz", 1, "scale object size")
 	flag.Int64Var(&options.Skip, "skip", 0, "skip N records")
 	flag.StringVar(&options.S3, "s3", "", "s3 bucket for enable s3 simulation")
@@ -250,9 +255,13 @@ func main() {
 		os.Exit(0)
 	}
 
-	if !options.Printlog {
+	if options.NoDebug {
 		log.Verbose = false
 		log.Level = logger.LOG_LEVEL_INFO
+	}
+	if options.SummaryOnly {
+		log.Verbose = false
+		log.Level = logger.LOG_LEVEL_WARN
 	}
 
 	traceFile, err := os.Open(flag.Arg(0))
@@ -319,7 +328,9 @@ func main() {
 		if rec.Sz > options.MaxSz {
 			rec.Sz = options.MaxSz
 		}
-		rec.Sz = uint64(float64(rec.Sz) * options.ScaleSz)
+		if rec.Sz > options.ScaleFrom {
+			rec.Sz = uint64(float64(rec.Sz) * options.ScaleSz)
+		}
 
 		if lastRecord != nil {
 			if !timer.Stop() {
@@ -399,9 +410,9 @@ func main() {
 			activated += lambda.ActiveMinites
 		}
 	}
-	log.Info("Total memory consumed: %s", humanize.Bytes(uint64(totalMem)))
-	log.Info("Memory consumed per lambda: %s - %s", humanize.Bytes(uint64(minMem)), humanize.Bytes(uint64(maxMem)))
-	log.Info("Chunks per lambda: %d - %d", int(minChunks), int(maxChunks))
-	log.Info("Set %d, Got %d, Reset %d", set, got, reset)
-	log.Info("Active Minutes %d", activated)
+	syslog.Printf("Total memory consumed: %s\n", humanize.Bytes(uint64(totalMem)))
+	syslog.Printf("Memory consumed per lambda: %s - %s\n", humanize.Bytes(uint64(minMem)), humanize.Bytes(uint64(maxMem)))
+	syslog.Printf("Chunks per lambda: %d - %d\n", int(minChunks), int(maxChunks))
+	syslog.Printf("Set %d, Got %d, Reset %d\n", set, got, reset)
+	syslog.Printf("Active Minutes %d\n", activated)
 }
