@@ -12,6 +12,7 @@ import (
 
 type RedisClient struct {
 	client *redis.Client
+	addr   string
 	log    logger.ILogger
 }
 
@@ -24,9 +25,9 @@ func newSession(addr string) *redis.Client {
 }
 
 func NewRedisClient(addr string) *RedisClient {
-	client := newSession(addr)
+	//client := newSession(addr)
 	return &RedisClient{
-		client: client,
+		addr: addr,
 		log: &logger.ColorLogger{
 			Verbose: true,
 			Level:   logger.LOG_LEVEL_ALL,
@@ -49,6 +50,8 @@ func (r *RedisClient) EcSet(key string, val []byte, args ...interface{}) (string
 
 	// set to redis
 	start := time.Now()
+	// create new session
+	r.client = newSession(r.addr)
 	err := r.client.Set(key, val, 0).Err()
 	if err != nil {
 		r.log.Error("failed to SET file: %v", err)
@@ -71,6 +74,8 @@ func (r *RedisClient) EcGet(key string, size int, args ...interface{}) (string, 
 
 	// GET from Redis
 	start := time.Now()
+	// create new session
+	r.client = newSession(r.addr)
 	val, err := r.client.Get(key).Bytes()
 	if err != nil {
 		r.log.Error("failed to GET file: %v", err)
