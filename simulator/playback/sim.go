@@ -56,7 +56,8 @@ type Options struct {
 	Skip           int64
 	S3             string
 	Redis          string
-	RedisCluster	bool
+	RedisCluster	 bool
+	Balance        bool
 }
 
 type Client interface {
@@ -72,10 +73,16 @@ type Object struct {
 }
 
 type Lambda struct {
+	Id      int
 	Kvs     map[string]*Object
 	MemUsed uint64
 	ActiveMinites int
 	LastActive time.Time
+	Capacity uint64
+	UsedPercentile int
+
+	block    int
+	blocks   []int
 }
 
 func (l *Lambda) Activate(recTime time.Time) {
@@ -85,12 +92,6 @@ func (l *Lambda) Activate(recTime time.Time) {
 		l.ActiveMinites++
 	}
 	l.LastActive = recTime
-}
-
-type Proxy struct {
-	Id         string
-	LambdaPool []Lambda
-	Placements map[string][]int
 }
 
 type Record struct {
@@ -174,7 +175,7 @@ func perform(opts *Options, client Client, p *Proxy, rec *Record) (string, strin
 			return "set", reqId
 		}
 
-		p.Placements[rec.Key] = placements
+		p.Placements[rec.Key] = p.Remap(placements)
 		for _, idx := range placements {
 			obj := &Object{
 				Key:  rec.Key,
@@ -183,6 +184,9 @@ func perform(opts *Options, client Client, p *Proxy, rec *Record) (string, strin
 			}
 			p.LambdaPool[idx].Kvs[rec.Key] = obj
 			p.LambdaPool[idx].MemUsed += obj.Sz
+			if opts.Dryrun && opts.Balance {
+				p.Adapt(idx)
+			}
 			(&p.LambdaPool[idx]).Activate(rec.Time)
 		}
 		log.Trace("Set %s, placements: %v.", rec.Key, placements)
@@ -190,17 +194,24 @@ func perform(opts *Options, client Client, p *Proxy, rec *Record) (string, strin
 	}
 }
 
-func initProxies(nProxies int, nLambdasPerProxy int) ([]Proxy, *consistent.Consistent) {
+func initProxies(nProxies int, opts *Options) ([]Proxy, *consistent.Consistent) {
 	proxies := make([]Proxy, nProxies)
 	members := []consistent.Member{}
 	for i, _ := range proxies {
 		proxies[i].Id = strconv.Itoa(i)
-		proxies[i].LambdaPool = make([]Lambda, nLambdasPerProxy)
+		proxies[i].LambdaPool = make([]Lambda, opts.Cluster)
 		proxies[i].Placements = make(map[string][]int)
 		for j, _ := range proxies[i].LambdaPool {
+			proxies[i].LambdaPool[j].Id = j
 			proxies[i].LambdaPool[j].Kvs = make(map[string]*Object)
 			proxies[i].LambdaPool[j].MemUsed = 0
+			proxies[i].LambdaPool[j].Capacity = 1073741824
 		}
+		if opts.Balance {
+			proxies[i].Balancer = &PriorityBalancer{}
+			proxies[i].Init()
+		}
+
 		member := Member(proxies[i].Id)
 		members = append(members, member)
 	}
@@ -247,6 +258,7 @@ func main() {
 	flag.StringVar(&options.S3, "s3", "", "s3 bucket for enable s3 simulation")
 	flag.StringVar(&options.Redis, "redis", "", "Redis for enable Redis simulation")
 	flag.BoolVar(&options.RedisCluster, "redisCluster", false, "redisCluster for enable Redis simulation")
+	flag.BoolVar(&options.Balance, "balance", false, "enable balancer on dryrun")
 
 	flag.Parse()
 
@@ -272,7 +284,7 @@ func main() {
 	defer traceFile.Close()
 
 	addrArr := strings.Split(options.AddrList, ",")
-	proxies, ring := initProxies(len(addrArr), options.Cluster)
+	proxies, ring := initProxies(len(addrArr), options)
 	var client Client
 	if options.S3 != "" {
 		client = NewS3Client(options.S3)
@@ -393,6 +405,7 @@ func main() {
 	got := uint64(0)
 	reset := uint64(0)
 	activated := 0
+	var balancerCost time.Duration
 	for i := 0; i < len(proxies); i++ {
 		proxy := &proxies[i]
 		for j := 0; j < len(proxy.LambdaPool); j++ {
@@ -409,10 +422,13 @@ func main() {
 			}
 			activated += lambda.ActiveMinites
 		}
+		balancerCost += proxy.BalancerCost
 	}
+	syslog.Printf("Total records: %d\n", read - options.Skip)
 	syslog.Printf("Total memory consumed: %s\n", humanize.Bytes(uint64(totalMem)))
 	syslog.Printf("Memory consumed per lambda: %s - %s\n", humanize.Bytes(uint64(minMem)), humanize.Bytes(uint64(maxMem)))
 	syslog.Printf("Chunks per lambda: %d - %d\n", int(minChunks), int(maxChunks))
 	syslog.Printf("Set %d, Got %d, Reset %d\n", set, got, reset)
 	syslog.Printf("Active Minutes %d\n", activated)
+	syslog.Printf("BalancerCost: %s(%s per request)", balancerCost, balancerCost / time.Duration(read - options.Skip))
 }
