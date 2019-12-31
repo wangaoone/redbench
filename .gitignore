@@ -1,2 +1,4 @@
 *.xml
 redbench.iml
+*.csv
+playback

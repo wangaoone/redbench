@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"github.com/buraksezer/consistent"
 	"github.com/cespare/xxhash"
-	humanize "github.com/dustin/go-humanize"
+	"github.com/dustin/go-humanize"
 	"github.com/wangaoone/LambdaObjectstore/lib/logger"
 	"github.com/wangaoone/ecRedis"
 	"io"
@@ -22,15 +22,16 @@ import (
 )
 
 const (
-	TIME_PATTERN = "2006-01-02 15:04:05.000"
-	TIME_PATTERN2 = "2006-01-02 15:04:05"
+	TIME_PATTERN      = "2006-01-02 15:04:05.000"
+	TIME_PATTERN2     = "2006-01-02 15:04:05"
+	INIT_LRU_CAPACITY = 10000000
 )
 
 var (
-	log           = &logger.ColorLogger{
+	log = &logger.ColorLogger{
 		Verbose: true,
-		Level: logger.LOG_LEVEL_ALL,
-		Color: true,
+		Level:   logger.LOG_LEVEL_ALL,
+		Color:   true,
 	}
 )
 
@@ -56,8 +57,9 @@ type Options struct {
 	Skip           int64
 	S3             string
 	Redis          string
-	RedisCluster	 bool
+	RedisCluster   bool
 	Balance        bool
+	LRU            bool
 }
 
 type Client interface {
@@ -66,27 +68,29 @@ type Client interface {
 }
 
 type Object struct {
-	Key  string
-	Sz   uint64
-	Freq uint64
-	Reset uint64
+	Key        string
+	Sz         uint64
+	Freq       uint64
+	Reset      uint64
+	ArriveTime int64
+	Tier       string
 }
 
 type Lambda struct {
-	Id      int
-	Kvs     map[string]*Object
-	MemUsed uint64
-	ActiveMinites int
-	LastActive time.Time
-	Capacity uint64
+	Id             int
+	Kvs            map[string]*Object
+	MemUsed        uint64
+	ActiveMinites  int
+	LastActive     time.Time
+	Capacity       uint64
 	UsedPercentile int
 
-	block    int
-	blocks   []int
+	block  int
+	blocks []int
 }
 
 func (l *Lambda) Activate(recTime time.Time) {
-	if l.ActiveMinites == 0  {
+	if l.ActiveMinites == 0 {
 		l.ActiveMinites++
 	} else if recTime.Sub(l.LastActive) >= time.Minute {
 		l.ActiveMinites++
@@ -95,9 +99,9 @@ func (l *Lambda) Activate(recTime time.Time) {
 }
 
 type Record struct {
-	Key       string
-	Sz        uint64
-	Time      time.Time
+	Key  string
+	Sz   uint64
+	Time time.Time
 }
 
 type Member string
@@ -113,7 +117,124 @@ func (h hasher) Sum64(data []byte) uint64 {
 	return xxhash.Sum64(data)
 }
 
-func perform(opts *Options, client Client, p *Proxy, rec *Record) (string, string) {
+func perform(opts *Options, client Client, p *Proxy, rec *Record, placer *Placer) (string, string) {
+	dryrun := 0
+	if opts.Dryrun {
+		dryrun = opts.Cluster
+	}
+	// log.Debug("Key:", rec.Key, "mapped to Proxy:", p.Id)
+	if placements, ok := p.Placements[rec.Key]; ok {
+		log.Trace("ok is %v, %v", ok, placements)
+		reqId, reader, success := client.EcGet(rec.Key, int(rec.Sz), dryrun)
+		log.Trace("success is %v", success)
+		if !success {
+			val := make([]byte, rec.Sz)
+			rand.Read(val)
+			resetPlacements := make([]int, opts.Datashard+opts.Parityshard)
+			_, reset := client.EcSet(rec.Key, val, 0, resetPlacements)
+			if reset {
+				log.Trace("Reset %s.", rec.Key)
+				displaced := false
+				for i, idx := range resetPlacements {
+					obj, exists := p.LambdaPool[idx].Kvs[rec.Key]
+					if !exists {
+						displaced = true
+						log.Warn("Placement changed on reset %s, %d -> %d", rec.Key, placements[i], idx)
+						obj = p.LambdaPool[placements[i]].Kvs[rec.Key]
+						delete(p.LambdaPool[placements[i]].Kvs, rec.Key)
+						p.LambdaPool[idx].Kvs[rec.Key] = obj
+						p.LambdaPool[idx].MemUsed += obj.Sz
+					}
+					obj.Reset++
+				}
+				if displaced {
+					p.Placements[rec.Key] = resetPlacements
+				}
+			}
+			return "get", reqId
+		} else if reader != nil {
+			reader.Close()
+		}
+		log.Trace("Get %s.", rec.Key)
+
+		for _, idx := range placements {
+			obj := p.LambdaPool[idx].Kvs[rec.Key]
+			log.Trace("key is, %v, obj is %v", rec.Key, obj)
+			obj.Freq++
+			(&p.LambdaPool[idx]).Activate(rec.Time)
+		}
+		return "get", reqId
+	} else {
+		// if key does not exist, generate the index array holding
+		// indexes of the destination lambdas
+		var val []byte
+		if !opts.Lean {
+			val = make([]byte, rec.Sz)
+			rand.Read(val)
+		}
+		placements := make([]int, opts.Datashard+opts.Parityshard)
+		dryrun := 0
+		if opts.Dryrun {
+			dryrun = opts.Cluster
+		}
+		reqId, success := client.EcSet(rec.Key, val, dryrun, placements)
+		if !success {
+			return "set", reqId
+		}
+
+		//p.Placements[rec.Key] = p.Remap(placements)
+		p.Placements[rec.Key] = placements
+		log.Trace("placements is ", placements)
+		// obj
+		obj := &Object{
+			Key:        rec.Key,
+			Sz:         rec.Sz,
+			Freq:       0,
+			ArriveTime: time.Now().Unix(),
+		}
+		// placer append whole obj instead of obj chunk
+		// assign object size tier
+		placer.Append(obj)
+
+		del := false
+		// determine whether current placements is enough for object
+		for _, idx := range placements {
+			if p.LambdaPool[idx].MemUsed+(obj.Sz/uint64(opts.Datashard)) >= p.LambdaPool[idx].Capacity {
+				del = true
+				break
+			}
+		}
+		if del == true {
+			log.Trace("del is true")
+			newPlacement := placer.FindPlacement(obj, p)
+			// new placement for incoming key
+			p.Placements[obj.Key] = newPlacement
+			// perform set after delete with new placement
+			for _, idx := range newPlacement {
+				p.LambdaPool[idx].Kvs[rec.Key] = obj
+				p.LambdaPool[idx].MemUsed += obj.Sz / uint64(opts.Datashard)
+				//if opts.Dryrun && opts.Balance {
+				//	p.Adapt(idx)
+				//}
+				//(&p.LambdaPool[idx]).Activate(rec.Time)
+			}
+			log.Trace("del and set is finish")
+		} else {
+			for _, idx := range placements {
+				p.LambdaPool[idx].Kvs[rec.Key] = obj
+				p.LambdaPool[idx].MemUsed += obj.Sz / uint64(opts.Datashard)
+				//if opts.Dryrun && opts.Balance {
+				//	p.Adapt(idx)
+				//}
+				//(&p.LambdaPool[idx]).Activate(rec.Time)
+			}
+		}
+		log.Trace("Set %s, placements: %v.", rec.Key, placements)
+		return "set", reqId
+	}
+}
+
+func performNoLRU(opts *Options, client Client, p *Proxy, rec *Record) (string, string) {
 	dryrun := 0
 	if opts.Dryrun {
 		dryrun = opts.Cluster
@@ -124,7 +245,7 @@ func perform(opts *Options, client Client, p *Proxy, rec *Record) (string, strin
 		if !success {
 			val := make([]byte, rec.Sz)
 			rand.Read(val)
-			resetPlacements := make([]int, opts.Datashard + opts.Parityshard)
+			resetPlacements := make([]int, opts.Datashard+opts.Parityshard)
 			_, reset := client.EcSet(rec.Key, val, 0, resetPlacements)
 			if reset {
 				log.Trace("Reset %s.", rec.Key)
@@ -165,7 +286,7 @@ func perform(opts *Options, client Client, p *Proxy, rec *Record) (string, strin
 			val = make([]byte, rec.Sz)
 			rand.Read(val)
 		}
-		placements := make([]int, opts.Datashard + opts.Parityshard)
+		placements := make([]int, opts.Datashard+opts.Parityshard)
 		dryrun := 0
 		if opts.Dryrun {
 			dryrun = opts.Cluster
@@ -206,6 +327,7 @@ func initProxies(nProxies int, opts *Options) ([]Proxy, *consistent.Consistent) 
 			proxies[i].LambdaPool[j].Kvs = make(map[string]*Object)
 			proxies[i].LambdaPool[j].MemUsed = 0
 			proxies[i].LambdaPool[j].Capacity = 1073741824
+			//proxies[i].LambdaPool[j].Capacity = 1048576000 / 2
 		}
 		if opts.Balance {
 			proxies[i].Balancer = &PriorityBalancer{}
@@ -259,6 +381,7 @@ func main() {
 	flag.StringVar(&options.Redis, "redis", "", "Redis for enable Redis simulation")
 	flag.BoolVar(&options.RedisCluster, "redisCluster", false, "redisCluster for enable Redis simulation")
 	flag.BoolVar(&options.Balance, "balance", false, "enable balancer on dryrun")
+	//flag.BoolVar(&options.LRU, "LRU", false, "enable LRU evict on dryrun")
 
 	flag.Parse()
 
@@ -290,7 +413,7 @@ func main() {
 		client = NewS3Client(options.S3)
 	} else if options.Redis != "" {
 		client = NewRedisClient(options.Redis)
-	} else if options.RedisCluster == true{
+	} else if options.RedisCluster == true {
 		client = NewClusterRedisClient()
 	} else {
 		client = ecRedis.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
@@ -298,8 +421,10 @@ func main() {
 			client.(*ecRedis.Client).Dial(addrArr)
 		}
 	}
-
-
+	var placer *Placer
+	//if options.LRU != false {
+	placer = NewPlacer()
+	//}
 	reader := csv.NewReader(bufio.NewReader(traceFile))
 	// Skip first line
 	_, err = reader.Read()
@@ -333,9 +458,9 @@ func main() {
 			continue
 		}
 		rec := &Record{
-			Key:       line[6],
-			Sz:        uint64(sz),
-			Time:      t,
+			Key:  line[6],
+			Sz:   uint64(sz),
+			Time: t,
 		}
 		if rec.Sz > options.MaxSz {
 			rec.Sz = options.MaxSz
@@ -368,13 +493,13 @@ func main() {
 			// On skiping, use elapsed to record time.
 			if read >= options.Skip {
 				if timeout > 0 {
-					log.Info("Playback %d in %v", read + 1, timeout)
+					log.Info("Playback %d in %v", read+1, timeout)
 				}
 				timer.Reset(timeout)
 			} else {
 				skipedDuration += timeout
 				if timeout > 0 {
-					log.Info("Skip %d: %v", read + 1, timeout)
+					log.Info("Skip %d: %v", read+1, timeout)
 				}
 			}
 		} else {
@@ -384,12 +509,12 @@ func main() {
 		var reqId string
 		if read >= options.Skip {
 			<-timer.C
-			log.Info("%d Playbacking %v(exp %v, act %v)...", read + 1, rec.Key, rec.Time.Sub(startRecord.Time), skipedDuration + time.Since(start))
+			log.Info("%d Playbacking %v(exp %v, act %v)...", read+1, rec.Key, rec.Time.Sub(startRecord.Time), skipedDuration+time.Since(start))
 			member := ring.LocateKey([]byte(rec.Key))
 			hostId := member.String()
 			id, _ := strconv.Atoi(hostId)
-			_, reqId = perform(options, client, &proxies[id], rec)
-			log.Debug("csv,%s,%s,%d,%d", reqId, rec.Key, int64(rec.Time.Sub(startRecord.Time)), int64(skipedDuration + time.Since(start)))
+			_, reqId = perform(options, client, &proxies[id], rec, placer)
+			log.Debug("csv,%s,%s,%d,%d", reqId, rec.Key, int64(rec.Time.Sub(startRecord.Time)), int64(skipedDuration+time.Since(start)))
 		}
 
 		lastRecord = rec
@@ -424,11 +549,11 @@ func main() {
 		}
 		balancerCost += proxy.BalancerCost
 	}
-	syslog.Printf("Total records: %d\n", read - options.Skip)
+	syslog.Printf("Total records: %d\n", read-options.Skip)
 	syslog.Printf("Total memory consumed: %s\n", humanize.Bytes(uint64(totalMem)))
 	syslog.Printf("Memory consumed per lambda: %s - %s\n", humanize.Bytes(uint64(minMem)), humanize.Bytes(uint64(maxMem)))
 	syslog.Printf("Chunks per lambda: %d - %d\n", int(minChunks), int(maxChunks))
 	syslog.Printf("Set %d, Got %d, Reset %d\n", set, got, reset)
 	syslog.Printf("Active Minutes %d\n", activated)
-	syslog.Printf("BalancerCost: %s(%s per request)", balancerCost, balancerCost / time.Duration(read - options.Skip))
+	syslog.Printf("BalancerCost: %s(%s per request)", balancerCost, balancerCost/time.Duration(read-options.Skip))
 }
