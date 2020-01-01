@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"github.com/buraksezer/consistent"
 	"github.com/cespare/xxhash"
-	humanize "github.com/dustin/go-humanize"
+	"github.com/dustin/go-humanize"
 	"github.com/wangaoone/LambdaObjectstore/lib/logger"
 	"github.com/wangaoone/ecRedis"
 	"io"
@@ -119,18 +119,21 @@ func perform(opts *Options, client Client, p *Proxy, rec *Record) (string, strin
 		dryrun = opts.Cluster
 	}
 	// log.Debug("Key:", rec.Key, "mapped to Proxy:", p.Id)
+	log.Trace("find placement,%v,%v", p.Placements[rec.Key], rec.Key)
+
 	if placements, ok := p.Placements[rec.Key]; ok {
 		reqId, reader, success := client.EcGet(rec.Key, int(rec.Sz), dryrun)
 		if !success {
 			val := make([]byte, rec.Sz)
 			rand.Read(val)
-			resetPlacements := make([]int, opts.Datashard + opts.Parityshard)
-			_, reset := client.EcSet(rec.Key, val, 0, resetPlacements)
+			resetPlacements := make([]int, opts.Datashard+opts.Parityshard)
+			_, reset := client.EcSet(rec.Key, val, 0, resetPlacements, "Reset")
 			if reset {
 				log.Trace("Reset %s.", rec.Key)
 				displaced := false
 				for i, idx := range resetPlacements {
 					obj, exists := p.LambdaPool[idx].Kvs[rec.Key]
+					//log.Trace("exists? %v", exists)
 					if !exists {
 						displaced = true
 						log.Warn("Placement changed on reset %s, %d -> %d", rec.Key, placements[i], idx)
@@ -165,12 +168,12 @@ func perform(opts *Options, client Client, p *Proxy, rec *Record) (string, strin
 			val = make([]byte, rec.Sz)
 			rand.Read(val)
 		}
-		placements := make([]int, opts.Datashard + opts.Parityshard)
+		placements := make([]int, opts.Datashard+opts.Parityshard)
 		dryrun := 0
 		if opts.Dryrun {
 			dryrun = opts.Cluster
 		}
-		reqId, success := client.EcSet(rec.Key, val, dryrun, placements)
+		reqId, success := client.EcSet(rec.Key, val, dryrun, placements, "Normal")
 		if !success {
 			return "set", reqId
 		}

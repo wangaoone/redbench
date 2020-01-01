@@ -41,8 +41,11 @@ func (r *RedisClient) EcSet(key string, val []byte, args ...interface{}) (string
 	reqId := uuid.New().String()
 	// Debuging options
 	var dryrun int
+	var mark string
 	if len(args) > 0 {
 		dryrun, _ = args[0].(int)
+		mark, _ = args[2].(string)
+
 	}
 	if dryrun > 0 {
 		return reqId, true
@@ -52,12 +55,13 @@ func (r *RedisClient) EcSet(key string, val []byte, args ...interface{}) (string
 	start := time.Now()
 	// create new session
 	r.client = newSession(r.addr)
+	defer r.client.Close()
 	err := r.client.Set(key, val, 0).Err()
 	if err != nil {
 		r.log.Error("failed to SET file: %v", err)
 		return reqId, false
 	}
-	r.log.Info("Set %s %d", key, int64(time.Since(start)))
+	r.log.Info("%sSet %s %d", mark, key, int64(time.Since(start)))
 	return reqId, true
 }
 
