@@ -1,3 +1,4 @@
 *.xml
 redbench.iml
+*.csv
 simulator/playback/playback
