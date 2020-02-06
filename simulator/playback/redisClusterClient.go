@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"github.com/go-redis/redis"
 	"github.com/google/uuid"
-	"github.com/wangaoone/LambdaObjectstore/lib/logger"
+	"github.com/mason-leap-lab/infinicache/common/logger"
 	"io"
 	"io/ioutil"
 	"time"

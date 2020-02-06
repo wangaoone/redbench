@@ -9,7 +9,7 @@ import (
 	"github.com/ScottMansfield/nanolog"
 
 	//"github.com/pkg/profile"
-	"github.com/wangaoone/ecRedis"
+	"github.com/mason-leap-lab/infinicache/client"
 	"io"
 	"io/ioutil"
 	"log"
@@ -151,7 +151,7 @@ func Bench(
 	remaining := int64(opts.Clients)
 	errs := make([]error, opts.Clients)
 	durs := make([][]time.Duration, opts.Clients)
-	clients := make([]*ecRedis.Client, opts.Clients)
+	clis := make([]*client.Client, opts.Clients)
 
 	// create all clients
 	for i := 0; i < opts.Clients; i++ {
@@ -164,8 +164,8 @@ func Bench(
 
 		addrArr := strings.Split(opts.AddrList, ",")
 		log.Println("number of hosts: ", len(addrArr))
-		client := ecRedis.NewClient(opts.Datashard, opts.Parityshard, opts.ECmaxgoroutine)
-		client.Dial(addrArr)
+		cli := client.NewClient(opts.Datashard, opts.Parityshard, opts.ECmaxgoroutine)
+		cli.Dial(addrArr)
 		/*
 			if err != nil {
 				if i == 0 {
@@ -181,8 +181,8 @@ func Bench(
 				}
 			}
 			conns[i] = conn*/
-		defer client.Close()
-		clients[i] = client
+		defer cli.Close()
+		clis[i] = cli
 	}
 
 	tstart := time.Now()
@@ -196,12 +196,12 @@ func Bench(
 		rand.Read(val)
 
 		//go func(conn net.Conn, client, crequests int) {
-		go func(client *ecRedis.Client, cid, crequests int) {
+		go func(cli *client.Client, cid, crequests int) {
 			defer func() {
 				atomic.AddInt64(&remaining, -1)
 			}()
 			/*if conn == nil {
-			if client == nil {
+			if cli == nil {
 				return
 			}*/
 			err := func() error {
@@ -223,11 +223,11 @@ func Bench(
 					atomic.AddUint64(&totalPayload, uint64(len(val)))
 					start := time.Now()
 					//_, err := conn.Write(buf)
-					//client.EcSet("key", val)
+					//cli.EcSet("key", val)
 					if opts.Op == 0 {
-						client.EcSet(key, val)
+						cli.EcSet(key, val)
 					} else {
-						_, reader, ok := client.EcGet(key, len(val))
+						_, reader, ok := cli.EcGet(key, len(val))
 						if ok {
 							reader.Close()	// By closing the reader, we save memory.
 						}
@@ -255,7 +255,7 @@ func Bench(
 				errs[cid] = err
 			}
 			//}(conns[i], i, crequests)
-		}(clients[i], i, crequests)
+		}(clis[i], i, crequests)
 	}
 	var die bool
 	for {
@@ -420,11 +420,11 @@ func main() {
 
 	//optionMap := make(map[string]interface{})
 	//optionMap["file"] = option.File
-	//ecRedis.CreateLog(optionMap)
+	//client.CreateLog(optionMap)
 	logCreate(option)
-	//ecRedis.SetLogger(nanoLog)
+	//client.SetLogger(nanoLog)
 	//
-	//nanoLog(ecRedis.LogClient, "a", "b", int64(1), int64(2), int64(3))
+	//nanoLog(client.LogClient, "a", "b", int64(1), int64(2), int64(3))
 
 	f := option.File + "_" + strconv.Itoa(option.Op) + "_summary.txt"
 	file, err := os.Create(f)

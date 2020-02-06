@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/go-redis/redis"
-	"github.com/wangaoone/LambdaObjectstore/lib/logger"
+	"github.com/mason-leap-lab/infinicache/common/logger"
 	"log"
 	"math/rand"
 	"sync"

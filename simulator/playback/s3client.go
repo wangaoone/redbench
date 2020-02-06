@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/google/uuid"
-	"github.com/wangaoone/LambdaObjectstore/lib/logger"
+	"github.com/mason-leap-lab/infinicache/common/logger"
 	"io"
 	"io/ioutil"
 	"time"

@@ -9,8 +9,8 @@ import (
 	"github.com/buraksezer/consistent"
 	"github.com/cespare/xxhash"
 	humanize "github.com/dustin/go-humanize"
-	"github.com/wangaoone/LambdaObjectstore/lib/logger"
-	"github.com/wangaoone/ecRedis"
+	"github.com/mason-leap-lab/infinicache/common/logger"
+	"github.com/mason-leap-lab/infinicache/client"
 	"io"
 	syslog "log"
 	"math"
@@ -113,19 +113,19 @@ func (h hasher) Sum64(data []byte) uint64 {
 	return xxhash.Sum64(data)
 }
 
-func perform(opts *Options, client Client, p *Proxy, rec *Record) (string, string) {
+func perform(opts *Options, cli Client, p *Proxy, rec *Record) (string, string) {
 	dryrun := 0
 	if opts.Dryrun {
 		dryrun = opts.Cluster
 	}
 	// log.Debug("Key:", rec.Key, "mapped to Proxy:", p.Id)
 	if placements, ok := p.Placements[rec.Key]; ok {
-		reqId, reader, success := client.EcGet(rec.Key, int(rec.Sz), dryrun)
+		reqId, reader, success := cli.EcGet(rec.Key, int(rec.Sz), dryrun)
 		if !success {
 			val := make([]byte, rec.Sz)
 			rand.Read(val)
 			resetPlacements := make([]int, opts.Datashard + opts.Parityshard)
-			_, reset := client.EcSet(rec.Key, val, 0, resetPlacements)
+			_, reset := cli.EcSet(rec.Key, val, 0, resetPlacements)
 			if reset {
 				log.Trace("Reset %s.", rec.Key)
 				displaced := false
@@ -170,7 +170,7 @@ func perform(opts *Options, client Client, p *Proxy, rec *Record) (string, strin
 		if opts.Dryrun {
 			dryrun = opts.Cluster
 		}
-		reqId, success := client.EcSet(rec.Key, val, dryrun, placements)
+		reqId, success := cli.EcSet(rec.Key, val, dryrun, placements)
 		if !success {
 			return "set", reqId
 		}
@@ -285,17 +285,17 @@ func main() {
 
 	addrArr := strings.Split(options.AddrList, ",")
 	proxies, ring := initProxies(len(addrArr), options)
-	var client Client
+	var cli Client
 	if options.S3 != "" {
-		client = NewS3Client(options.S3)
+		cli = NewS3Client(options.S3)
 	} else if options.Redis != "" {
-		client = NewRedisClient(options.Redis)
+		cli = NewRedisClient(options.Redis)
 	} else if options.RedisCluster == true{
-		client = NewClusterRedisClient()
+		cli = NewClusterRedisClient()
 	} else {
-		client = ecRedis.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
+		cli = client.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
 		if !options.Dryrun {
-			client.(*ecRedis.Client).Dial(addrArr)
+			cli.(*client.Client).Dial(addrArr)
 		}
 	}
 
@@ -388,7 +388,7 @@ func main() {
 			member := ring.LocateKey([]byte(rec.Key))
 			hostId := member.String()
 			id, _ := strconv.Atoi(hostId)
-			_, reqId = perform(options, client, &proxies[id], rec)
+			_, reqId = perform(options, cli, &proxies[id], rec)
 			log.Debug("csv,%s,%s,%d,%d", reqId, rec.Key, int64(rec.Time.Sub(startRecord.Time)), int64(skipedDuration + time.Since(start)))
 		}
 
