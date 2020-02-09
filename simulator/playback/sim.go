@@ -157,6 +157,9 @@ func perform(opts *Options, cli Client, p *Proxy, rec *Record) (string, string) 
 
 		for _, idx := range placements {
 			obj, ok := p.LambdaPool[idx].Kvs[rec.Key]
+			if !ok {
+				log.Error("Unexpected key %s not found in %d", rec.Key, idx)
+			}
 			obj.Freq++
 			(&p.LambdaPool[idx]).Activate(rec.Time)
 		}
