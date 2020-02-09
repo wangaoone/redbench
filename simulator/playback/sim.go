@@ -132,17 +132,18 @@ func perform(opts *Options, cli Client, p *Proxy, rec *Record) (string, string) 
 				log.Trace("Reset %s.", rec.Key)
 				displaced := false
 				for i, idx := range resetPlacements {
-					obj, exists := p.LambdaPool[idx].Kvs[rec.Key]
-					//log.Trace("exists? %v", exists)
-					if !exists {
+					obj := p.LambdaPool[placements[i]].Kvs[rec.Key]
+					// Placement changed?
+					if idx != placements[i] {
 						displaced = true
 						log.Warn("Placement changed on reset %s, %d -> %d", rec.Key, placements[i], idx)
-						obj = p.LambdaPool[placements[i]].Kvs[rec.Key]
+						p.LambdaPool[placements[i]].MemUsed -= obj.Sz
 						delete(p.LambdaPool[placements[i]].Kvs, rec.Key)
 						p.LambdaPool[idx].Kvs[rec.Key] = obj
 						p.LambdaPool[idx].MemUsed += obj.Sz
 					}
 					obj.Reset++
+					(&p.LambdaPool[idx]).Activate(rec.Time)
 				}
 				if displaced {
 					p.Placements[rec.Key] = resetPlacements
@@ -155,7 +156,7 @@ func perform(opts *Options, cli Client, p *Proxy, rec *Record) (string, string) 
 		log.Trace("Get %s.", rec.Key)
 
 		for _, idx := range placements {
-			obj := p.LambdaPool[idx].Kvs[rec.Key]
+			obj, ok := p.LambdaPool[idx].Kvs[rec.Key]
 			obj.Freq++
 			(&p.LambdaPool[idx]).Activate(rec.Time)
 		}
