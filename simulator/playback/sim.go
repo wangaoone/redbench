@@ -11,6 +11,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/mason-leap-lab/infinicache/common/logger"
 	"github.com/mason-leap-lab/infinicache/client"
+	"github.com/mason-leap-lab/infinicache/proxy/global"
 	"io"
 	syslog "log"
 	"math"
@@ -19,6 +20,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/wangaoone/redbench/simulator/playback/proxy"
 )
 
 const (
@@ -33,6 +36,10 @@ var (
 		Color: true,
 	}
 )
+
+func init() {
+	global.Log = log
+}
 
 type Options struct {
 	AddrList       string
@@ -65,41 +72,6 @@ type Client interface {
 	EcGet(string, int, ...interface{}) (string, io.ReadCloser, bool)
 }
 
-type Object struct {
-	Key  string
-	Sz   uint64
-	Freq uint64
-	Reset uint64
-}
-
-type Lambda struct {
-	Id      int
-	Kvs     map[string]*Object
-	MemUsed uint64
-	ActiveMinites int
-	LastActive time.Time
-	Capacity uint64
-	UsedPercentile int
-
-	block    int
-	blocks   []int
-}
-
-func (l *Lambda) Activate(recTime time.Time) {
-	if l.ActiveMinites == 0  {
-		l.ActiveMinites++
-	} else if recTime.Sub(l.LastActive) >= time.Minute {
-		l.ActiveMinites++
-	}
-	l.LastActive = recTime
-}
-
-type Record struct {
-	Key       string
-	Sz        uint64
-	Time      time.Time
-}
-
 type Member string
 
 func (m Member) String() string {
@@ -113,55 +85,68 @@ func (h hasher) Sum64(data []byte) uint64 {
 	return xxhash.Sum64(data)
 }
 
-func perform(opts *Options, cli Client, p *Proxy, rec *Record) (string, string) {
+func perform(opts *Options, cli Client, p *proxy.Proxy, obj *proxy.Object) (string, string) {
 	dryrun := 0
 	if opts.Dryrun {
 		dryrun = opts.Cluster
 	}
-	// log.Debug("Key:", rec.Key, "mapped to Proxy:", p.Id)
-	log.Trace("find placement,%v,%v", p.Placements[rec.Key], rec.Key)
+	// log.Debug("Key:", obj.Key, "mapped to Proxy:", p.Id)
+	log.Trace("find placement,%v,%v", p.Placements[obj.Key], obj.Key)
 
-	if placements, ok := p.Placements[rec.Key]; ok {
-		reqId, reader, success := cli.EcGet(rec.Key, int(rec.Sz), dryrun)
+	if placements, ok := p.Placements[obj.Key]; ok {
+		reqId, reader, success := cli.EcGet(obj.Key, int(obj.Sz), dryrun)
+		if opts.Dryrun && opts.Balance {
+			success = p.Validate(obj)
+		}
+
 		if !success {
-			val := make([]byte, rec.Sz)
+			val := make([]byte, obj.Sz)
 			rand.Read(val)
 			resetPlacements := make([]int, opts.Datashard+opts.Parityshard)
-			_, reset := cli.EcSet(rec.Key, val, 0, resetPlacements, "Reset")
+			_, reset := cli.EcSet(obj.Key, val, dryrun, resetPlacements, "Reset")
 			if reset {
-				log.Trace("Reset %s.", rec.Key)
+				log.Trace("Reset %s.", obj.Key)
+
 				displaced := false
+				resetPlacements = p.Remap(resetPlacements, obj)
 				for i, idx := range resetPlacements {
-					obj := p.LambdaPool[placements[i]].Kvs[rec.Key]
-					// Placement changed?
-					if idx != placements[i] {
+					chk := p.LambdaPool[placements[i]].Kvs[fmt.Sprintf("%d@%s", i, obj.Key)]
+					if chk == nil {
+						// Eviction tracked by simulator. Try find chunk from evicts.
+						chk = p.Evicts[fmt.Sprintf("%d@%s", i, obj.Key)]
+
 						displaced = true
-						log.Warn("Placement changed on reset %s, %d -> %d", rec.Key, placements[i], idx)
-						p.LambdaPool[placements[i]].MemUsed -= obj.Sz
-						delete(p.LambdaPool[placements[i]].Kvs, rec.Key)
-						p.LambdaPool[idx].Kvs[rec.Key] = obj
-						p.LambdaPool[idx].MemUsed += obj.Sz
+						p.LambdaPool[idx].Kvs[chk.Key] = chk
+						p.LambdaPool[idx].MemUsed += chk.Sz
+					} else if idx != placements[i] {
+						// Placement changed?
+						displaced = true
+						log.Warn("Placement changed on reset %s, %d -> %d", chk.Key, placements[i], idx)
+						p.LambdaPool[placements[i]].MemUsed -= chk.Sz
+						delete(p.LambdaPool[placements[i]].Kvs, chk.Key)
+						p.LambdaPool[idx].Kvs[chk.Key] = chk
+						p.LambdaPool[idx].MemUsed += chk.Sz
 					}
-					obj.Reset++
-					(&p.LambdaPool[idx]).Activate(rec.Time)
+					chk.Reset++
+					(&p.LambdaPool[idx]).Activate(obj.Time)
 				}
 				if displaced {
-					p.Placements[rec.Key] = resetPlacements
+					p.Placements[obj.Key] = resetPlacements
 				}
 			}
 			return "get", reqId
 		} else if reader != nil {
 			reader.Close()
 		}
-		log.Trace("Get %s.", rec.Key)
+		log.Trace("Get %s.", obj.Key)
 
-		for _, idx := range placements {
-			obj, ok := p.LambdaPool[idx].Kvs[rec.Key]
+		for i, idx := range placements {
+			chk, ok := p.LambdaPool[idx].Kvs[fmt.Sprintf("%d@%s", i, obj.Key)]
 			if !ok {
-				log.Error("Unexpected key %s not found in %d", rec.Key, idx)
+				log.Error("Unexpected key %s not found in %d", chk.Key, idx)
 			}
-			obj.Freq++
-			(&p.LambdaPool[idx]).Activate(rec.Time)
+			chk.Freq++
+			(&p.LambdaPool[idx]).Activate(obj.Time)
 		}
 		return "get", reqId
 	} else {
@@ -169,7 +154,7 @@ func perform(opts *Options, cli Client, p *Proxy, rec *Record) (string, string) 
 		// indexes of the destination lambdas
 		var val []byte
 		if !opts.Lean {
-			val = make([]byte, rec.Sz)
+			val = make([]byte, obj.Sz)
 			rand.Read(val)
 		}
 		placements := make([]int, opts.Datashard+opts.Parityshard)
@@ -177,45 +162,51 @@ func perform(opts *Options, cli Client, p *Proxy, rec *Record) (string, string) 
 		if opts.Dryrun {
 			dryrun = opts.Cluster
 		}
-		reqId, success := cli.EcSet(rec.Key, val, dryrun, placements, "Normal")
+		reqId, success := cli.EcSet(obj.Key, val, dryrun, placements, "Normal")
 		if !success {
 			return "set", reqId
 		}
 
-		p.Placements[rec.Key] = p.Remap(placements)
-		for _, idx := range placements {
-			obj := &Object{
-				Key:  rec.Key,
-				Sz:   rec.Sz / uint64(opts.Datashard),
-				Freq: 0,
+		placements = p.Remap(placements, obj)
+		for i, idx := range placements {
+			chkKey := fmt.Sprintf("%d@%s", i, obj.Key)
+			chk := p.Evicts[chkKey]
+			if chk == nil {
+				chk = &proxy.Chunk{
+					Key:  chkKey,
+					Sz:   obj.ChunkSz,
+					Freq: 0,
+				}
 			}
-			p.LambdaPool[idx].Kvs[rec.Key] = obj
-			p.LambdaPool[idx].MemUsed += obj.Sz
+			p.LambdaPool[idx].Kvs[chk.Key] = chk
+			p.LambdaPool[idx].MemUsed += chk.Sz
 			if opts.Dryrun && opts.Balance {
-				p.Adapt(idx)
+				p.Adapt(idx, chk)
 			}
-			(&p.LambdaPool[idx]).Activate(rec.Time)
+			(&p.LambdaPool[idx]).Activate(obj.Time)
 		}
-		log.Trace("Set %s, placements: %v.", rec.Key, placements)
+		log.Trace("Set %s, placements: %v.", obj.Key, placements)
+		p.Placements[obj.Key] = placements
 		return "set", reqId
 	}
 }
 
-func initProxies(nProxies int, opts *Options) ([]Proxy, *consistent.Consistent) {
-	proxies := make([]Proxy, nProxies)
+func initProxies(nProxies int, opts *Options) ([]proxy.Proxy, *consistent.Consistent) {
+	proxies := make([]proxy.Proxy, nProxies)
 	members := []consistent.Member{}
 	for i, _ := range proxies {
 		proxies[i].Id = strconv.Itoa(i)
-		proxies[i].LambdaPool = make([]Lambda, opts.Cluster)
+		proxies[i].LambdaPool = make([]proxy.Lambda, opts.Cluster)
 		proxies[i].Placements = make(map[string][]int)
 		for j, _ := range proxies[i].LambdaPool {
 			proxies[i].LambdaPool[j].Id = j
-			proxies[i].LambdaPool[j].Kvs = make(map[string]*Object)
-			proxies[i].LambdaPool[j].MemUsed = 0
-			proxies[i].LambdaPool[j].Capacity = 1073741824
+			proxies[i].LambdaPool[j].Kvs = make(map[string]*proxy.Chunk)
+			proxies[i].LambdaPool[j].MemUsed = 100 * 1000000     // MB
+			proxies[i].LambdaPool[j].Capacity = 1024 * 1000000    // MB
 		}
+		proxies[i].Evicts = make(map[string]*proxy.Chunk)
 		if opts.Balance {
-			proxies[i].Balancer = &PriorityBalancer{}
+			proxies[i].Balancer = &proxy.LRUPlacer{}
 			proxies[i].Init()
 		}
 
@@ -320,8 +311,8 @@ func main() {
 	start := time.Now()
 	read := int64(0)
 	var skipedDuration time.Duration
-	var startRecord *Record
-	var lastRecord *Record
+	var startObject *proxy.Object
+	var lastObject *proxy.Object
 	for {
 		line, err := reader.Read()
 		if err == io.EOF {
@@ -339,19 +330,20 @@ func main() {
 			log.Warn("Error on parse record, skip %v: %v, %v", line, szErr, tErr)
 			continue
 		}
-		rec := &Record{
+		obj := &proxy.Object{
 			Key:       line[6],
 			Sz:        uint64(sz),
+			ChunkSz:   uint64(sz) / uint64(options.Datashard),
 			Time:      t,
 		}
-		if rec.Sz > options.MaxSz {
-			rec.Sz = options.MaxSz
+		if obj.Sz > options.MaxSz {
+			obj.Sz = options.MaxSz
 		}
-		if rec.Sz > options.ScaleFrom {
-			rec.Sz = uint64(float64(rec.Sz) * options.ScaleSz)
+		if obj.Sz > options.ScaleFrom {
+			obj.Sz = uint64(float64(obj.Sz) * options.ScaleSz)
 		}
 
-		if lastRecord != nil {
+		if lastObject != nil {
 			if !timer.Stop() {
 				select {
 				case <-timer.C:
@@ -360,13 +352,13 @@ func main() {
 			}
 			timeout := time.Duration(options.Interval) * time.Millisecond
 			if options.Compact {
-				next := rec.Time.Sub(lastRecord.Time)
+				next := obj.Time.Sub(lastObject.Time)
 				if next < timeout {
 					timeout = next
 				}
 			} else {
 				// Use absolute time span for accuracy
-				timeout = rec.Time.Sub(startRecord.Time) - skipedDuration - time.Since(start)
+				timeout = obj.Time.Sub(startObject.Time) - skipedDuration - time.Since(start)
 			}
 			if timeout <= 0 || (options.Dryrun && options.Compact) {
 				timeout = 0
@@ -385,21 +377,21 @@ func main() {
 				}
 			}
 		} else {
-			startRecord = rec
+			startObject = obj
 		}
 
 		var reqId string
 		if read >= options.Skip {
 			<-timer.C
-			log.Info("%d Playbacking %v(exp %v, act %v)...", read + 1, rec.Key, rec.Time.Sub(startRecord.Time), skipedDuration + time.Since(start))
-			member := ring.LocateKey([]byte(rec.Key))
+			log.Info("%d Playbacking %v(exp %v, act %v)...", read + 1, obj.Key, obj.Time.Sub(startObject.Time), skipedDuration + time.Since(start))
+			member := ring.LocateKey([]byte(obj.Key))
 			hostId := member.String()
 			id, _ := strconv.Atoi(hostId)
-			_, reqId = perform(options, cli, &proxies[id], rec)
-			log.Debug("csv,%s,%s,%d,%d", reqId, rec.Key, int64(rec.Time.Sub(startRecord.Time)), int64(skipedDuration + time.Since(start)))
+			_, reqId = perform(options, cli, &proxies[id], obj)
+			log.Debug("csv,%s,%s,%d,%d", reqId, obj.Key, int64(obj.Time.Sub(startObject.Time)), int64(skipedDuration + time.Since(start)))
 		}
 
-		lastRecord = rec
+		lastObject = obj
 		read++
 	}
 
@@ -414,22 +406,27 @@ func main() {
 	activated := 0
 	var balancerCost time.Duration
 	for i := 0; i < len(proxies); i++ {
-		proxy := &proxies[i]
-		for j := 0; j < len(proxy.LambdaPool); j++ {
-			lambda := &proxy.LambdaPool[j]
+		prxy := &proxies[i]
+		for j := 0; j < len(prxy.LambdaPool); j++ {
+			lambda := &prxy.LambdaPool[j]
 			totalMem += float64(lambda.MemUsed)
 			minMem = math.Min(minMem, float64(lambda.MemUsed))
 			maxMem = math.Max(maxMem, float64(lambda.MemUsed))
 			minChunks = math.Min(minChunks, float64(len(lambda.Kvs)))
 			maxChunks = math.Max(maxChunks, float64(len(lambda.Kvs)))
 			set += len(lambda.Kvs)
-			for _, obj := range lambda.Kvs {
-				got += obj.Freq
-				reset += obj.Reset
+			for _, chk := range lambda.Kvs {
+				got += chk.Freq
+				reset += chk.Reset
 			}
 			activated += lambda.ActiveMinites
 		}
-		balancerCost += proxy.BalancerCost
+		for _, chk := range prxy.Evicts {
+			got += chk.Freq
+			reset += chk.Reset
+		}
+		balancerCost += prxy.BalancerCost
+		prxy.Close()
 	}
 	syslog.Printf("Total records: %d\n", read - options.Skip)
 	syslog.Printf("Total memory consumed: %s\n", humanize.Bytes(uint64(totalMem)))

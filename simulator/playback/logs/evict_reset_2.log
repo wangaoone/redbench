@@ -1,0 +1,846 @@
+2020/02/09 01:20:51 63 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 1m32.033s, act 1m53.220936322s)...
+2020/02/09 01:20:51 find placement,[],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:20:51 Placer Lambda 260 size updated: 220000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, change:30000000).
+2020/02/09 01:20:51 Proxy Requesting to set 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:20:51 Placer Lambda 382 size updated: 160000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, change:30000000).
+2020/02/09 01:20:51 Proxy Requesting to set 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:20:51 Placer Lambda 344 size updated: 190000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, change:30000000).
+2020/02/09 01:20:51 Proxy Requesting to set 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:20:51 Placer Lambda 349 size updated: 190000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, change:30000000).
+2020/02/09 01:20:51 Proxy Requesting to set 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:20:51 Placer Lambda 248 size updated: 130000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, change:30000000).
+2020/02/09 01:20:51 Placer Lambda 263 size updated: 160000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, change:30000000).
+2020/02/09 01:20:51 Placer Lambda 268 size updated: 130000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, change:30000000).
+2020/02/09 01:20:51 Proxy Requesting to set 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:20:51 Placer Lambda 246 size updated: 190000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, change:30000000).
+2020/02/09 01:20:51 Proxy Requesting to set 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:20:51 Placer Lambda 200 size updated: 220000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, change:30000000).
+2020/02/09 01:20:51 Proxy Requesting to set 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:20:51 Placer Lambda 334 size updated: 220000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, change:30000000).
+2020/02/09 01:20:51 Placer Lambda 210 size updated: 250000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, change:30000000).
+2020/02/09 01:20:51 Proxy Requesting to set 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:20:51 Placer Lambda 354 size updated: 160000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, change:30000000).
+2020/02/09 01:20:51 Proxy Requesting to set 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:20:51 Proxy Requesting to set 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:20:51 Proxy Requesting to set 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:20:51 Proxy Requesting to set 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:20:52 EcRedis Set v2/4715bf52/437c49db/blobs/b1ca9623 415838644
+2020/02/09 01:20:52 Set v2/4715bf52/437c49db/blobs/b1ca9623, placements: [354 334 200 382 344 246 260 349 248 263 210 268].
+2020/02/09 01:20:52 csv,c8fd8755-526c-452d-aedc-e9f7f3c6f805,v2/4715bf52/437c49db/blobs/b1ca9623,92033000000,114211373978
+2020/02/09 01:22:15 137 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 2m32.179s, act 3m17.634477726s)...
+2020/02/09 01:22:15 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:22:15 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:22:15 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:22:15 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:22:15 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:22:15 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:22:15 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:22:15 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:22:15 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:22:15 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:22:15 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:22:15 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:22:15 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:22:16 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 465256621 ( 408997593 56254247 )
+2020/02/09 01:22:16 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:22:16 csv,32aa38c3-ef5a-467d-9564-e230cbc9821b,v2/4715bf52/437c49db/blobs/b1ca9623,152179000000,198099847641
+2020/02/09 01:22:29 148 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 2m44.643s, act 3m31.790770541s)...
+2020/02/09 01:22:29 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:22:29 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:22:29 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:22:29 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:22:29 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:22:29 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:22:29 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:22:29 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:22:29 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:22:29 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:22:29 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:22:29 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:22:29 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:22:30 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 267425749 ( 226570165 40851516 )
+2020/02/09 01:22:30 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:22:30 csv,25ec6fb3-f4a2-4bad-8f8e-8f68b011bcd4,v2/4715bf52/437c49db/blobs/b1ca9623,164643000000,212058295980
+2020/02/09 01:23:53 213 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 4m46.437s, act 4m55.237427646s)...
+2020/02/09 01:23:53 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:23:53 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:23:53 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:23:53 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:23:53 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:23:53 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:23:53 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:23:53 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:23:53 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:23:53 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:23:53 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:23:53 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:23:53 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:23:53 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 281479176 ( 221094877 60379281 )
+2020/02/09 01:23:53 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:23:53 csv,0279c46e-c9c1-4197-b675-66a36d5273f3,v2/4715bf52/437c49db/blobs/b1ca9623,286437000000,295519031733
+2020/02/09 01:25:16 274 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 6m35.337s, act 6m18.036432905s)...
+2020/02/09 01:25:16 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:25:16 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:25:16 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:25:16 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:25:16 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:25:16 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:25:16 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:25:16 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:25:16 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:25:16 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:25:16 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:25:16 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:25:16 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:25:16 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 290052411 ( 231222360 58825905 )
+2020/02/09 01:25:16 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:25:16 csv,602bc907-e0e1-48de-8093-b56386262787,v2/4715bf52/437c49db/blobs/b1ca9623,395337000000,378326591482
+2020/02/09 01:25:21 277 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 6m42.175s, act 6m22.891948173s)...
+2020/02/09 01:25:21 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:25:21 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:25:21 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:25:21 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:25:21 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:25:21 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:25:21 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:25:21 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:25:21 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:25:21 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:25:21 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:25:21 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:25:21 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:25:21 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 253405406 ( 216472445 36929479 )
+2020/02/09 01:25:21 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:25:21 csv,c9b35122-b661-461a-8f19-6ea0d5443cd2,v2/4715bf52/437c49db/blobs/b1ca9623,402175000000,383145474463
+2020/02/09 01:27:00 354 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 8m24.703s, act 8m2.388905223s)...
+2020/02/09 01:27:00 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:27:00 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:27:00 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:27:00 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:27:00 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:27:00 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:27:00 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:27:00 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:27:00 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:27:00 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:27:00 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:27:00 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:27:00 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:27:00 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 243275340 ( 203788146 39481716 )
+2020/02/09 01:27:00 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:27:00 csv,76897fc7-bc72-44c5-ab26-cfb00cdd8b86,v2/4715bf52/437c49db/blobs/b1ca9623,504703000000,482632290218
+2020/02/09 01:28:44 444 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 10m41.237s, act 9m46.394931833s)...
+2020/02/09 01:28:44 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:28:44 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:28:44 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:28:44 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:28:44 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:28:44 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:28:44 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:28:44 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:28:44 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:28:44 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:28:44 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:28:44 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:28:44 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:28:44 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 266922312 ( 206468791 60449915 )
+2020/02/09 01:28:44 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:28:44 csv,5d7526ac-f896-4fec-a19d-04474786c46d,v2/4715bf52/437c49db/blobs/b1ca9623,641237000000,586661986254
+2020/02/09 01:33:38 679 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 14m51.698s, act 14m40.676946459s)...
+2020/02/09 01:33:38 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:33:38 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:33:38 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:33:38 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:33:38 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:33:38 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:33:38 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:33:38 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:33:38 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:33:38 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:33:38 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:33:38 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:33:38 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:33:39 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 441067687 ( 382794113 58268769 )
+2020/02/09 01:33:39 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:33:39 csv,0c9528cf-30f0-4a4a-96de-4bb8a8990b71,v2/4715bf52/437c49db/blobs/b1ca9623,891698000000,881118120802
+2020/02/09 01:35:34 758 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 16m30.062s, act 16m35.898436087s)...
+2020/02/09 01:35:34 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:35:34 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:35:34 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:35:34 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:35:34 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:35:34 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:35:34 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:35:34 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:35:34 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:35:34 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:35:34 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:35:34 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:35:34 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:35:34 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 337213937 ( 274678945 62530716 )
+2020/02/09 01:35:34 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:35:34 csv,890caf7c-a13f-4191-8864-80e10d95542f,v2/4715bf52/437c49db/blobs/b1ca9623,990062000000,996235777058
+2020/02/09 01:35:39 761 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 16m35.517s, act 16m41.469547728s)...
+2020/02/09 01:35:39 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:35:39 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:35:39 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:35:39 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:35:39 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:35:39 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:35:39 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:35:39 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:35:39 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:35:39 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:35:39 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:35:39 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:35:39 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:35:39 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 276356932 ( 239462306 36889294 )
+2020/02/09 01:35:39 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:35:39 csv,8b9e57d1-7ed6-4b1a-8ba5-dd291dfd231d,v2/4715bf52/437c49db/blobs/b1ca9623,995517000000,1001746020530
+2020/02/09 01:36:29 806 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 17m34.072s, act 17m31.694941694s)...
+2020/02/09 01:36:29 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:36:29 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:36:29 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:36:29 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:36:29 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:36:29 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:36:29 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:36:29 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:36:29 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:36:29 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:36:29 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:36:29 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:36:29 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:36:30 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 286148926 ( 224253674 61890578 )
+2020/02/09 01:36:30 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:36:30 csv,52746982-993e-4e7f-9020-62d2d94a860b,v2/4715bf52/437c49db/blobs/b1ca9623,1054072000000,1051981198890
+2020/02/09 01:36:52 830 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 17m47.741s, act 17m54.326415205s)...
+2020/02/09 01:36:52 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:36:52 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:36:52 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:36:52 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:36:52 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:36:52 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:36:52 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:36:52 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:36:52 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:36:52 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:36:52 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:36:52 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:36:52 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:36:52 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 242967040 ( 199480110 43482984 )
+2020/02/09 01:36:52 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:36:52 csv,2912f820-dd35-4bec-a781-5da5107d63e9,v2/4715bf52/437c49db/blobs/b1ca9623,1067741000000,1074569484087
+2020/02/09 01:36:58 837 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 17m51.406s, act 18m0.192685033s)...
+2020/02/09 01:36:58 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:36:58 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:36:58 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:36:58 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:36:58 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:36:58 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:36:58 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:36:58 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:36:58 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:36:58 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:36:58 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:36:58 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:36:58 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:36:58 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 264363013 ( 203929613 60429398 )
+2020/02/09 01:36:58 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:36:58 csv,56b685cf-1e46-4321-b840-52ea6042e1a5,v2/4715bf52/437c49db/blobs/b1ca9623,1071406000000,1080457164943
+2020/02/09 01:37:07 846 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 17m58.745s, act 18m9.66396042s)...
+2020/02/09 01:37:07 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:37:07 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:37:07 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:37:07 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:37:07 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:37:07 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:37:07 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:37:07 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:37:07 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:37:07 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:37:07 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:37:07 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:37:07 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:37:08 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 201539717 ( 162053618 39481939 )
+2020/02/09 01:37:08 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:37:08 csv,59a1bd22-b29c-4db4-a066-825e97fb1bd1,v2/4715bf52/437c49db/blobs/b1ca9623,1078745000000,1089865628710
+2020/02/09 01:37:47 879 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 18m29.004s, act 18m49.755824009s)...
+2020/02/09 01:37:47 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:37:47 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:37:47 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:37:47 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:37:47 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:37:47 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:37:47 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:37:47 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:37:47 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:37:47 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:37:47 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:37:47 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:37:47 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:37:48 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 243096035 ( 205933334 37156613 )
+2020/02/09 01:37:48 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:37:48 csv,c1a3301e-58fd-4642-aff5-87461b87c1b3,v2/4715bf52/437c49db/blobs/b1ca9623,1109004000000,1129999030870
+2020/02/09 01:38:13 905 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 18m52.207s, act 19m15.081136322s)...
+2020/02/09 01:38:13 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:38:13 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:38:13 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:38:13 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:38:13 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:38:13 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:38:13 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:38:13 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:38:13 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:38:13 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:38:13 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:38:13 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:38:13 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:38:13 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 293750283 ( 233269483 60476484 )
+2020/02/09 01:38:13 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:38:13 csv,a24a2599-67fb-40c2-ae67-768ef0d38290,v2/4715bf52/437c49db/blobs/b1ca9623,1132207000000,1155374997989
+2020/02/09 01:40:04 995 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 20m37.812s, act 21m5.964458896s)...
+2020/02/09 01:40:04 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:40:04 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:40:04 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:40:04 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:40:04 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:40:04 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:40:04 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:40:04 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:40:04 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:40:04 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:40:04 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:40:04 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:40:04 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:40:04 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 257762668 ( 199431635 58323933 )
+2020/02/09 01:40:04 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:40:04 csv,f0a93f93-eb2a-4bf8-ae61-7736e7f8767f,v2/4715bf52/437c49db/blobs/b1ca9623,1237812000000,1266222320783
+2020/02/09 01:40:50 1036 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 21m5.482s, act 21m52.682731873s)...
+2020/02/09 01:40:50 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:40:50 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:40:50 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:40:50 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:40:50 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:40:50 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:40:50 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:40:50 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:40:50 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:40:50 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:40:50 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:40:50 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:40:50 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:40:51 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 310756784 ( 247945197 62808025 )
+2020/02/09 01:40:51 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:40:51 csv,1e5b4f42-f1cf-40bf-ba5b-da3d07d5a3c4,v2/4715bf52/437c49db/blobs/b1ca9623,1265482000000,1312993589356
+2020/02/09 01:42:45 1111 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 24m18.391s, act 23m47.115187441s)...
+2020/02/09 01:42:45 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:42:45 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:42:45 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:42:45 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:42:45 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:42:45 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:42:45 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:42:45 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:42:45 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:42:45 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:42:45 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:42:45 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:42:45 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:42:45 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 271363425 ( 212375989 58983251 )
+2020/02/09 01:42:45 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:42:45 csv,eb0c278a-dbd6-4e4a-a2cc-f84d2d3624e3,v2/4715bf52/437c49db/blobs/b1ca9623,1458391000000,1427386663096
+2020/02/09 01:44:11 1165 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 26m8.009s, act 25m12.879896284s)...
+2020/02/09 01:44:11 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:44:11 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:44:11 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:44:11 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:44:11 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:44:11 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:44:11 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:44:11 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:44:11 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:44:11 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:44:11 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:44:11 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:44:11 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:44:11 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 189489950 ( 149442906 40041504 )
+2020/02/09 01:44:11 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:44:11 csv,f68c3c80-b3e2-4d75-89a2-337be5708ff7,v2/4715bf52/437c49db/blobs/b1ca9623,1568009000000,1513069493004
+2020/02/09 01:44:45 1193 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 26m29.655s, act 25m47.812358932s)...
+2020/02/09 01:44:45 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:44:45 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:44:45 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:44:45 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:44:45 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:44:45 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:44:45 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:44:45 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:44:45 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:44:45 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:44:45 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:44:45 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:44:45 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:44:46 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 379795906 ( 313561902 66228012 )
+2020/02/09 01:44:46 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:44:46 csv,ec13dbea-221d-41c0-9c44-1d21a5dd8116,v2/4715bf52/437c49db/blobs/b1ca9623,1589655000000,1548192278094
+2020/02/09 01:46:40 1279 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 27m43.451s, act 27m42.436089254s)...
+2020/02/09 01:46:40 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:46:40 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:46:40 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:46:40 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:46:40 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:46:40 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:46:40 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:46:40 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:46:40 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:46:40 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:46:40 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:46:40 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:46:40 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:46:40 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 342251597 ( 280205178 62041151 )
+2020/02/09 01:46:40 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:46:40 csv,0a5193f3-3a48-4a74-a0ea-daff6daadd93,v2/4715bf52/437c49db/blobs/b1ca9623,1663451000000,1662778467836
+2020/02/09 01:48:01 1341 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 29m22.752s, act 29m3.416730612s)...
+2020/02/09 01:48:01 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:48:01 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:48:01 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:48:01 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:48:01 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:48:01 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:48:01 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:48:01 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:48:01 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:48:01 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:48:01 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:48:01 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:48:01 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:48:01 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 264809343 ( 200408865 64395868 )
+2020/02/09 01:48:01 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:48:01 csv,ac7cdcf9-32e7-427d-916e-92c061c23102,v2/4715bf52/437c49db/blobs/b1ca9623,1762752000000,1743681662282
+2020/02/09 01:48:47 1371 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 30m6.126s, act 29m49.788797841s)...
+2020/02/09 01:48:47 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:48:47 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:48:47 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:48:47 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:48:47 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:48:47 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:48:47 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:48:47 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:48:47 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:48:47 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:48:47 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:48:47 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:48:47 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:48:48 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 271785167 ( 213187177 58593069 )
+2020/02/09 01:48:48 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:48:48 csv,964e984f-62ef-475d-b547-1a33b861f6e4,v2/4715bf52/437c49db/blobs/b1ca9623,1806126000000,1790060702548
+2020/02/09 01:50:03 1431 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 31m1.82s, act 31m5.618708673s)...
+2020/02/09 01:50:03 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:50:03 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:50:03 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:50:03 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:50:03 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:50:03 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:50:03 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:50:03 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:50:03 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:50:03 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:50:03 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:50:03 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:50:03 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:50:04 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 324748892 ( 265378280 59366681 )
+2020/02/09 01:50:04 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:50:04 csv,e1f9e670-0b2c-42d2-bd11-5ebf06f1a009,v2/4715bf52/437c49db/blobs/b1ca9623,1861820000000,1865943578203
+2020/02/09 01:50:23 1445 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 31m20.127s, act 31m25.266347643s)...
+2020/02/09 01:50:23 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:50:23 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:50:23 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:50:23 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:50:23 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:50:23 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:50:23 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:50:23 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:50:23 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:50:23 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:50:23 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:50:23 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:50:23 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:50:23 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 271007025 ( 231480196 39521540 )
+2020/02/09 01:50:23 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:50:23 csv,a6b38fd3-e827-410d-870e-c09c5f3c009b,v2/4715bf52/437c49db/blobs/b1ca9623,1880127000000,1885537472561
+2020/02/09 01:51:26 1486 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 33m42.479s, act 32m28.522948861s)...
+2020/02/09 01:51:26 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:51:26 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:51:26 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:51:26 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:51:26 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:51:26 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:51:26 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:51:26 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:51:26 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:51:26 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:51:26 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:51:26 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:51:26 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:51:26 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 324097878 ( 260066137 64026377 )
+2020/02/09 01:51:26 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:51:26 csv,2f00189c-714d-4091-9cf8-438de89b1060,v2/4715bf52/437c49db/blobs/b1ca9623,2022479000000,1948847159435
+2020/02/09 01:52:41 1529 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 35m23.889s, act 33m43.356929359s)...
+2020/02/09 01:52:41 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:52:41 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:52:41 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:52:41 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:52:41 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:52:41 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:52:41 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:52:41 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:52:41 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:52:41 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:52:41 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:52:41 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:52:41 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:52:41 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 340890827 ( 281422862 59463361 )
+2020/02/09 01:52:41 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:52:41 csv,9c5cc569-a514-495c-8911-bf01e80dc1f2,v2/4715bf52/437c49db/blobs/b1ca9623,2123889000000,2023697929714
+2020/02/09 01:54:54 1604 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 39m21.785s, act 35m55.906438573s)...
+2020/02/09 01:54:54 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:54:54 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:54:54 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:54:54 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:54:54 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:54:54 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:54:54 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:54:54 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:54:54 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:54:54 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:54:54 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:54:54 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:54:54 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:54:54 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 341340783 ( 281505223 59830861 )
+2020/02/09 01:54:54 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:54:54 csv,d545edb3-1c77-4c3a-8a36-b4d41d8335c1,v2/4715bf52/437c49db/blobs/b1ca9623,2361785000000,2156247881791
+2020/02/09 01:55:47 1639 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 41m46.624s, act 36m49.553037518s)...
+2020/02/09 01:55:47 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 01:55:47 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 349
+2020/02/09 01:55:47 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 268
+2020/02/09 01:55:47 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 01:55:47 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 248
+2020/02/09 01:55:47 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 382
+2020/02/09 01:55:47 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 260
+2020/02/09 01:55:47 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 200
+2020/02/09 01:55:47 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 344
+2020/02/09 01:55:47 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 354
+2020/02/09 01:55:47 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 01:55:47 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 246
+2020/02/09 01:55:47 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 334
+2020/02/09 01:55:48 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 378775080 ( 318056587 60712275 )
+2020/02/09 01:55:48 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 01:55:48 csv,65e7998f-9db4-43cf-8ec4-6d7650babc70,v2/4715bf52/437c49db/blobs/b1ca9623,2506624000000,2209931920623
+2020/02/09 02:00:57 Placer Lambda 382 size updated: 820000000 of 1024000000 (key:v2/bb977c48/blobs/9e93fdf7, evict:v2/4715bf52/437c49db/blobs/b1ca9623, Δ:0).
+2020/02/09 02:00:57 Placer Lambda 344 size updated: 670000000 of 1024000000 (key:v2/bb977c48/blobs/9e93fdf7, evict:v2/4715bf52/437c49db/blobs/b1ca9623, Δ:0).
+2020/02/09 02:00:57 Placer Lambda 246 size updated: 790000000 of 1024000000 (key:v2/bb977c48/blobs/9e93fdf7, evict:v2/4715bf52/437c49db/blobs/b1ca9623, Δ:0).
+2020/02/09 02:00:57 Placer Lambda 210 size updated: 880000000 of 1024000000 (key:v2/bb977c48/blobs/9e93fdf7, evict:v2/4715bf52/437c49db/blobs/b1ca9623, Δ:0).
+2020/02/09 02:09:16 2069 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 46m34.803s, act 50m18.740753528s)...
+2020/02/09 02:09:16 find placement,[354 334 200 382 344 246 260 349 248 263 210 268],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 02:09:16 Proxy KEY 0@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 EcRedis Error on receiving chunk 0: KEY 0@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 Proxy KEY 10@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 Proxy KEY 4@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 Proxy KEY 9@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 Proxy KEY 5@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 Proxy KEY 8@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 Proxy KEY 2@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 EcRedis Error on receiving chunk 10: KEY 10@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 Proxy KEY 1@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 Proxy KEY 11@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 EcRedis Error on receiving chunk 5: KEY 5@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 Proxy KEY 7@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 Proxy KEY 3@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 EcRedis Error on receiving chunk 4: KEY 4@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 EcRedis Error on receiving chunk 9: KEY 9@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 Proxy KEY 6@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 EcRedis Error on receiving chunk 11: KEY 11@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 EcRedis Error on receiving chunk 8: KEY 8@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 EcRedis Error on receiving chunk 7: KEY 7@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 EcRedis Error on receiving chunk 3: KEY 3@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 EcRedis Error on receiving chunk 6: KEY 6@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 EcRedis Error on receiving chunk 1: KEY 1@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:16 EcRedis Error on receiving chunk 2: KEY 2@v2/4715bf52/437c49db/blobs/b1ca9623 not found in lambda store, please set first.
+2020/02/09 02:09:17 Placer Lambda 333 size updated: 910000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, change:30000000).
+2020/02/09 02:09:17 Proxy Requesting to set 8@v2/4715bf52/437c49db/blobs/b1ca9623: 333
+2020/02/09 02:09:17 Placer Lambda 350 size updated: 760000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, evict:v2/4715bf52/605ce621/blobs/3c4b1e7f, Δ:0).
+2020/02/09 02:09:17 Placer Lambda 310 size updated: 1000000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, evict:v2/4715bf52/605ce621/blobs/3c4b1e7f, Δ:0).
+2020/02/09 02:09:17 Placer Lambda 241 size updated: 970000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, evict:v2/4715bf52/605ce621/blobs/3c4b1e7f, Δ:0).
+2020/02/09 02:09:17 Placer Lambda 263 size updated: 820000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, evict:v2/4715bf52/605ce621/blobs/3c4b1e7f, Δ:0).
+2020/02/09 02:09:17 Placer Lambda 358 size updated: 730000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, evict:v2/4715bf52/605ce621/blobs/3c4b1e7f, Δ:0).
+2020/02/09 02:09:17 Placer Lambda 210 size updated: 910000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, evict:v2/4715bf52/605ce621/blobs/3c4b1e7f, Δ:0).
+2020/02/09 02:09:17 Placer Lambda 394 size updated: 850000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, evict:v2/4715bf52/605ce621/blobs/3c4b1e7f, Δ:0).
+2020/02/09 02:09:17 Placer Lambda 366 size updated: 730000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, evict:v2/4715bf52/605ce621/blobs/3c4b1e7f, Δ:0).
+2020/02/09 02:09:17 Placer Lambda 255 size updated: 970000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, evict:v2/4715bf52/605ce621/blobs/3c4b1e7f, Δ:0).
+2020/02/09 02:09:17 Placer Lambda 276 size updated: 970000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, evict:v2/4715bf52/605ce621/blobs/3c4b1e7f, Δ:0).
+2020/02/09 02:09:17 Placer Lambda 266 size updated: 1000000000 of 1024000000 (key:v2/4715bf52/437c49db/blobs/b1ca9623, evict:v2/4715bf52/605ce621/blobs/3c4b1e7f, Δ:0).
+2020/02/09 02:09:17 Proxy Requesting to set 1@v2/4715bf52/437c49db/blobs/b1ca9623: 310
+2020/02/09 02:09:17 Proxy Requesting to set 3@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 02:09:17 Proxy Requesting to set 4@v2/4715bf52/437c49db/blobs/b1ca9623: 358
+2020/02/09 02:09:17 Proxy Requesting to set 6@v2/4715bf52/437c49db/blobs/b1ca9623: 394
+2020/02/09 02:09:17 Proxy Requesting to set 10@v2/4715bf52/437c49db/blobs/b1ca9623: 276
+2020/02/09 02:09:17 Proxy Requesting to set 0@v2/4715bf52/437c49db/blobs/b1ca9623: 350
+2020/02/09 02:09:17 Proxy Requesting to set 2@v2/4715bf52/437c49db/blobs/b1ca9623: 241
+2020/02/09 02:09:17 Proxy Requesting to set 11@v2/4715bf52/437c49db/blobs/b1ca9623: 266
+2020/02/09 02:09:17 Proxy Requesting to set 9@v2/4715bf52/437c49db/blobs/b1ca9623: 255
+2020/02/09 02:09:17 Proxy Requesting to set 5@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 02:09:17 Proxy Requesting to set 7@v2/4715bf52/437c49db/blobs/b1ca9623: 366
+2020/02/09 02:09:20 EcRedis Set v2/4715bf52/437c49db/blobs/b1ca9623 3527738294
+2020/02/09 02:09:20 Reset v2/4715bf52/437c49db/blobs/b1ca9623.
+2020/02/09 02:09:20 Placement changed on reset v2/4715bf52/437c49db/blobs/b1ca9623, 354 -> 350
+2020/02/09 02:09:20 Placement changed on reset v2/4715bf52/437c49db/blobs/b1ca9623, 334 -> 310
+2020/02/09 02:09:20 Placement changed on reset v2/4715bf52/437c49db/blobs/b1ca9623, 200 -> 241
+2020/02/09 02:09:20 Placement changed on reset v2/4715bf52/437c49db/blobs/b1ca9623, 344 -> 358
+2020/02/09 02:09:20 Placement changed on reset v2/4715bf52/437c49db/blobs/b1ca9623, 260 -> 394
+2020/02/09 02:09:20 Placement changed on reset v2/4715bf52/437c49db/blobs/b1ca9623, 349 -> 366
+2020/02/09 02:09:20 Placement changed on reset v2/4715bf52/437c49db/blobs/b1ca9623, 248 -> 333
+2020/02/09 02:09:20 Placement changed on reset v2/4715bf52/437c49db/blobs/b1ca9623, 263 -> 255
+2020/02/09 02:09:20 Placement changed on reset v2/4715bf52/437c49db/blobs/b1ca9623, 210 -> 276
+2020/02/09 02:09:20 Placement changed on reset v2/4715bf52/437c49db/blobs/b1ca9623, 268 -> 266
+2020/02/09 02:09:20 csv,9c73902a-63c3-4ac1-8540-bff054a3b0cd,v2/4715bf52/437c49db/blobs/b1ca9623,2794803000000,3022849879808
+2020/02/09 02:18:41 2195 Playbacking v2/4715bf52/437c49db/blobs/b1ca9623(exp 48m2.812s, act 59m43.722974893s)...
+2020/02/09 02:18:41 find placement,[350 310 241 263 358 210 394 366 333 255 276 266],v2/4715bf52/437c49db/blobs/b1ca9623
+2020/02/09 02:18:41 Proxy Requesting to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: 266
+2020/02/09 02:18:41 Proxy Requesting to get 7@v2/4715bf52/437c49db/blobs/b1ca9623: 366
+2020/02/09 02:18:41 Proxy Requesting to get 0@v2/4715bf52/437c49db/blobs/b1ca9623: 350
+2020/02/09 02:18:41 Proxy Requesting to get 3@v2/4715bf52/437c49db/blobs/b1ca9623: 263
+2020/02/09 02:18:41 Proxy Requesting to get 2@v2/4715bf52/437c49db/blobs/b1ca9623: 241
+2020/02/09 02:18:41 Proxy Requesting to get 6@v2/4715bf52/437c49db/blobs/b1ca9623: 394
+2020/02/09 02:18:41 Proxy Requesting to get 9@v2/4715bf52/437c49db/blobs/b1ca9623: 255
+2020/02/09 02:18:41 Proxy Requesting to get 10@v2/4715bf52/437c49db/blobs/b1ca9623: 276
+2020/02/09 02:18:41 Proxy Requesting to get 5@v2/4715bf52/437c49db/blobs/b1ca9623: 210
+2020/02/09 02:18:41 Proxy Requesting to get 8@v2/4715bf52/437c49db/blobs/b1ca9623: 333
+2020/02/09 02:18:41 Proxy Requesting to get 1@v2/4715bf52/437c49db/blobs/b1ca9623: 310
+2020/02/09 02:18:41 Proxy Requesting to get 4@v2/4715bf52/437c49db/blobs/b1ca9623: 358
+2020/02/09 02:18:41 Store1VPCNode266 Response error: Failed to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: Key not found
+2020/02/09 02:18:41 EcRedis Error on receiving chunk 11: Response error: Failed to get 11@v2/4715bf52/437c49db/blobs/b1ca9623: Key not found
+2020/02/09 02:18:42 EcRedis Got v2/4715bf52/437c49db/blobs/b1ca9623 299206984 ( 258182654 41020817 )
+2020/02/09 02:18:42 Proxy Requesting to set 11@v2/4715bf52/437c49db/blobs/b1ca9623: 266
+2020/02/09 02:18:42 EcRedis Succeeded to recover shards of v2/4715bf52/437c49db/blobs/b1ca9623: [11]
+2020/02/09 02:18:42 Get v2/4715bf52/437c49db/blobs/b1ca9623.
+ubuntu@ip-172-31-41-180:~/go/src/github.com/mason-leap-lab/infinicache/evaluation$ lambdabench
+ubuntu@ip-172-31-41-180:~/go/src/github.com/wangaoone/redbench$ git pull
+remote: Enumerating objects: 7, done.
+remote: Counting objects: 100% (7/7), done.
+remote: Compressing objects: 100% (6/6), done.
+remote: Total 7 (delta 0), reused 4 (delta 0), pack-reused 0
+Unpacking objects: 100% (7/7), done.
+From https://github.com/wangaoone/redbench
+   20e16fb..bedb141  master     -> origin/master
+Updating 20e16fb..bedb141
+Fast-forward
+ simulator/playback/logs/evict_reset_1.log | 634 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ simulator/playback/sim.go                 |  11 +-
+ 2 files changed, 640 insertions(+), 5 deletions(-)
+ create mode 100644 simulator/playback/logs/evict_reset_1.log
+ubuntu@ip-172-31-41-180:~/go/src/github.com/wangaoone/redbench$ git pull
+remote: Enumerating objects: 5, done.
+remote: Counting objects: 100% (5/5), done.
+remote: Compressing objects: 100% (5/5), done.
+remote: Total 5 (delta 0), reused 2 (delta 0), pack-reused 0
+Unpacking objects: 100% (5/5), done.
+From https://github.com/wangaoone/redbench
+   bedb141..a7f36f9  master     -> origin/master
+Updating bedb141..a7f36f9
+Fast-forward
+ simulator/playback/sim.go | 3 +++
+ 1 file changed, 3 insertions(+)
+ubuntu@ip-172-31-41-180:~/go/src/github.com/wangaoone/redbench$ exit
+logout
+Connection to server.gmu.tianium.com closed.
+Titan:GMU Tianium$ amazon-server
+Welcome to Ubuntu 16.04.6 LTS (GNU/Linux 4.4.0-1100-aws x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+53 packages can be updated.
+0 updates are security updates.
+
+New release '18.04.3 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+
+*** System restart required ***
+Last login: Sun Feb  9 22:15:03 2020 from 173.79.52.92
+ubuntu@ip-172-31-41-180:~$ ls
+dockfiles  go
+ubuntu@ip-172-31-41-180:~$ lambdastore
+ubuntu@ip-172-31-41-180:~/go/src/github.com/mason-leap-lab/infinicache$ cd evaluation/
+ubuntu@ip-172-31-41-180:~/go/src/github.com/mason-leap-lab/infinicache/evaluation$ cat log | grep v2/4715bf52/d06c2db5/blobs/dfc826e2
+2020/02/09 07:14:37 8 Playbacking v2/4715bf52/d06c2db5/blobs/dfc826e2(exp 18.817s, act 13.649371909s)...
+2020/02/09 07:14:37 find placement,[],v2/4715bf52/d06c2db5/blobs/dfc826e2
+2020/02/09 07:14:38 Placer Lambda 330 size updated: 130000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, change:30000000).
+2020/02/09 07:14:38 Proxy Requesting to set 6@v2/4715bf52/d06c2db5/blobs/dfc826e2: 330
+2020/02/09 07:14:38 Placer Lambda 342 size updated: 130000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, change:30000000).
+2020/02/09 07:14:38 Proxy Requesting to set 2@v2/4715bf52/d06c2db5/blobs/dfc826e2: 342
+2020/02/09 07:14:38 Placer Lambda 307 size updated: 130000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, change:30000000).
+2020/02/09 07:14:38 Placer Lambda 276 size updated: 160000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, change:30000000).
+2020/02/09 07:14:38 Proxy Requesting to set 0@v2/4715bf52/d06c2db5/blobs/dfc826e2: 276
+2020/02/09 07:14:38 Placer Lambda 263 size updated: 130000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, change:30000000).
+2020/02/09 07:14:38 Proxy Requesting to set 10@v2/4715bf52/d06c2db5/blobs/dfc826e2: 263
+2020/02/09 07:14:38 Placer Lambda 244 size updated: 130000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, change:30000000).
+2020/02/09 07:14:38 Proxy Requesting to set 11@v2/4715bf52/d06c2db5/blobs/dfc826e2: 244
+2020/02/09 07:14:38 Placer Lambda 279 size updated: 130000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, change:30000000).
+2020/02/09 07:14:38 Proxy Requesting to set 7@v2/4715bf52/d06c2db5/blobs/dfc826e2: 279
+2020/02/09 07:14:38 Placer Lambda 297 size updated: 130000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, change:30000000).
+2020/02/09 07:14:38 Proxy Requesting to set 3@v2/4715bf52/d06c2db5/blobs/dfc826e2: 297
+2020/02/09 07:14:38 Placer Lambda 374 size updated: 130000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, change:30000000).
+2020/02/09 07:14:38 Proxy Requesting to set 9@v2/4715bf52/d06c2db5/blobs/dfc826e2: 374
+2020/02/09 07:14:38 Proxy Requesting to set 1@v2/4715bf52/d06c2db5/blobs/dfc826e2: 307
+2020/02/09 07:14:38 Placer Lambda 266 size updated: 130000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, change:30000000).
+2020/02/09 07:14:38 Proxy Requesting to set 5@v2/4715bf52/d06c2db5/blobs/dfc826e2: 266
+2020/02/09 07:14:38 Placer Lambda 239 size updated: 130000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, change:30000000).
+2020/02/09 07:14:38 Proxy Requesting to set 4@v2/4715bf52/d06c2db5/blobs/dfc826e2: 239
+2020/02/09 07:14:38 Placer Lambda 344 size updated: 130000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, change:30000000).
+2020/02/09 07:14:38 Proxy Requesting to set 8@v2/4715bf52/d06c2db5/blobs/dfc826e2: 344
+2020/02/09 07:14:38 EcRedis Set v2/4715bf52/d06c2db5/blobs/dfc826e2 440182180
+2020/02/09 07:14:38 Set v2/4715bf52/d06c2db5/blobs/dfc826e2, placements: [276 307 342 297 239 266 330 279 344 374 263 244].
+2020/02/09 07:14:38 csv,77bc88fe-5395-44fa-b8dc-638e145a1820,v2/4715bf52/d06c2db5/blobs/dfc826e2,18817000000,14681739162
+2020/02/09 07:28:31 520 Playbacking v2/4715bf52/d06c2db5/blobs/dfc826e2(exp 12m40.493s, act 14m7.40567115s)...
+2020/02/09 07:28:31 find placement,[276 307 342 297 239 266 330 279 344 374 263 244],v2/4715bf52/d06c2db5/blobs/dfc826e2
+2020/02/09 07:28:31 Proxy Requesting to get 11@v2/4715bf52/d06c2db5/blobs/dfc826e2: 244
+2020/02/09 07:28:31 Proxy Requesting to get 3@v2/4715bf52/d06c2db5/blobs/dfc826e2: 297
+2020/02/09 07:28:31 Proxy Requesting to get 9@v2/4715bf52/d06c2db5/blobs/dfc826e2: 374
+2020/02/09 07:28:31 Proxy Requesting to get 5@v2/4715bf52/d06c2db5/blobs/dfc826e2: 266
+2020/02/09 07:28:31 Proxy Requesting to get 8@v2/4715bf52/d06c2db5/blobs/dfc826e2: 344
+2020/02/09 07:28:31 Proxy Requesting to get 7@v2/4715bf52/d06c2db5/blobs/dfc826e2: 279
+2020/02/09 07:28:31 Proxy Requesting to get 0@v2/4715bf52/d06c2db5/blobs/dfc826e2: 276
+2020/02/09 07:28:31 Proxy Requesting to get 4@v2/4715bf52/d06c2db5/blobs/dfc826e2: 239
+2020/02/09 07:28:31 Proxy Requesting to get 10@v2/4715bf52/d06c2db5/blobs/dfc826e2: 263
+2020/02/09 07:28:31 Proxy Requesting to get 2@v2/4715bf52/d06c2db5/blobs/dfc826e2: 342
+2020/02/09 07:28:31 Proxy Requesting to get 1@v2/4715bf52/d06c2db5/blobs/dfc826e2: 307
+2020/02/09 07:28:31 Proxy Requesting to get 6@v2/4715bf52/d06c2db5/blobs/dfc826e2: 330
+2020/02/09 07:28:31 EcRedis Got v2/4715bf52/d06c2db5/blobs/dfc826e2 339565360 ( 282579211 56982559 )
+2020/02/09 07:28:31 Get v2/4715bf52/d06c2db5/blobs/dfc826e2.
+2020/02/09 07:28:31 csv,51d39e84-74a0-42c5-a67f-f3e6dceb2c99,v2/4715bf52/d06c2db5/blobs/dfc826e2,760493000000,847745328808
+2020/02/09 07:37:36 957 Playbacking v2/4715bf52/d06c2db5/blobs/dfc826e2(exp 19m49.757s, act 23m12.840234089s)...
+2020/02/09 07:37:36 find placement,[276 307 342 297 239 266 330 279 344 374 263 244],v2/4715bf52/d06c2db5/blobs/dfc826e2
+2020/02/09 07:37:36 Proxy Requesting to get 9@v2/4715bf52/d06c2db5/blobs/dfc826e2: 374
+2020/02/09 07:37:36 Proxy Requesting to get 8@v2/4715bf52/d06c2db5/blobs/dfc826e2: 344
+2020/02/09 07:37:36 Proxy Requesting to get 0@v2/4715bf52/d06c2db5/blobs/dfc826e2: 276
+2020/02/09 07:37:36 Proxy Requesting to get 3@v2/4715bf52/d06c2db5/blobs/dfc826e2: 297
+2020/02/09 07:37:36 Proxy Requesting to get 5@v2/4715bf52/d06c2db5/blobs/dfc826e2: 266
+2020/02/09 07:37:36 Proxy Requesting to get 11@v2/4715bf52/d06c2db5/blobs/dfc826e2: 244
+2020/02/09 07:37:36 Proxy Requesting to get 10@v2/4715bf52/d06c2db5/blobs/dfc826e2: 263
+2020/02/09 07:37:36 Proxy Requesting to get 1@v2/4715bf52/d06c2db5/blobs/dfc826e2: 307
+2020/02/09 07:37:36 Proxy Requesting to get 6@v2/4715bf52/d06c2db5/blobs/dfc826e2: 330
+2020/02/09 07:37:36 Proxy Requesting to get 2@v2/4715bf52/d06c2db5/blobs/dfc826e2: 342
+2020/02/09 07:37:36 Proxy Requesting to get 4@v2/4715bf52/d06c2db5/blobs/dfc826e2: 239
+2020/02/09 07:37:36 Proxy Requesting to get 7@v2/4715bf52/d06c2db5/blobs/dfc826e2: 279
+2020/02/09 07:37:37 EcRedis Got v2/4715bf52/d06c2db5/blobs/dfc826e2 314252119 ( 252439261 61808360 )
+2020/02/09 07:37:37 Get v2/4715bf52/d06c2db5/blobs/dfc826e2.
+2020/02/09 07:37:37 csv,03c618db-c3bd-4444-9719-6c4bce2b763f,v2/4715bf52/d06c2db5/blobs/dfc826e2,1189757000000,1393154585184
+2020/02/09 07:56:00 Placer Lambda 276 size updated: 700000000 of 1024000000 (key:v2/dbe7d36c/1197a521/blobs/fcfb681a, evict:v2/4715bf52/d06c2db5/blobs/dfc826e2, Δ:0).
+2020/02/09 07:56:00 Placer Lambda 307 size updated: 730000000 of 1024000000 (key:v2/dbe7d36c/1197a521/blobs/fcfb681a, evict:v2/4715bf52/d06c2db5/blobs/dfc826e2, Δ:0).
+2020/02/09 07:56:00 Placer Lambda 342 size updated: 730000000 of 1024000000 (key:v2/dbe7d36c/1197a521/blobs/fcfb681a, evict:v2/4715bf52/d06c2db5/blobs/dfc826e2, Δ:0).
+2020/02/09 07:56:00 Placer Lambda 297 size updated: 610000000 of 1024000000 (key:v2/dbe7d36c/1197a521/blobs/fcfb681a, evict:v2/4715bf52/d06c2db5/blobs/dfc826e2, Δ:0).
+2020/02/09 07:56:00 Placer Lambda 239 size updated: 790000000 of 1024000000 (key:v2/dbe7d36c/1197a521/blobs/fcfb681a, evict:v2/4715bf52/d06c2db5/blobs/dfc826e2, Δ:0).
+2020/02/09 07:56:00 Placer Lambda 266 size updated: 760000000 of 1024000000 (key:v2/dbe7d36c/1197a521/blobs/fcfb681a, evict:v2/4715bf52/d06c2db5/blobs/dfc826e2, Δ:0).
+2020/02/09 07:56:00 Placer Lambda 330 size updated: 760000000 of 1024000000 (key:v2/dbe7d36c/1197a521/blobs/fcfb681a, evict:v2/4715bf52/d06c2db5/blobs/dfc826e2, Δ:0).
+2020/02/09 07:56:00 Placer Lambda 279 size updated: 640000000 of 1024000000 (key:v2/dbe7d36c/1197a521/blobs/fcfb681a, evict:v2/4715bf52/d06c2db5/blobs/dfc826e2, Δ:0).
+2020/02/09 07:56:00 Placer Lambda 344 size updated: 1000000000 of 1024000000 (key:v2/dbe7d36c/1197a521/blobs/fcfb681a, evict:v2/4715bf52/d06c2db5/blobs/dfc826e2, Δ:0).
+2020/02/09 07:56:00 Placer Lambda 374 size updated: 880000000 of 1024000000 (key:v2/dbe7d36c/1197a521/blobs/fcfb681a, evict:v2/4715bf52/d06c2db5/blobs/dfc826e2, Δ:0).
+2020/02/09 07:56:00 Placer Lambda 263 size updated: 820000000 of 1024000000 (key:v2/dbe7d36c/1197a521/blobs/fcfb681a, evict:v2/4715bf52/d06c2db5/blobs/dfc826e2, Δ:0).
+2020/02/09 07:56:00 Placer Lambda 244 size updated: 700000000 of 1024000000 (key:v2/dbe7d36c/1197a521/blobs/fcfb681a, evict:v2/4715bf52/d06c2db5/blobs/dfc826e2, Δ:0).
+2020/02/09 07:57:20 1750 Playbacking v2/4715bf52/d06c2db5/blobs/dfc826e2(exp 43m56.786s, act 42m56.151423056s)...
+2020/02/09 07:57:20 find placement,[276 307 342 297 239 266 330 279 344 374 263 244],v2/4715bf52/d06c2db5/blobs/dfc826e2
+2020/02/09 07:57:20 Proxy KEY 3@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 Proxy KEY 11@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 Proxy KEY 5@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 Proxy KEY 8@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 EcRedis Error on receiving chunk 3: KEY 3@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 Proxy KEY 2@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 EcRedis Error on receiving chunk 11: KEY 11@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 EcRedis Error on receiving chunk 8: KEY 8@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 Proxy KEY 4@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 Proxy KEY 1@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 Proxy KEY 6@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 EcRedis Error on receiving chunk 5: KEY 5@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 Proxy KEY 7@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 EcRedis Error on receiving chunk 2: KEY 2@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 EcRedis Error on receiving chunk 4: KEY 4@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 Proxy KEY 9@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 EcRedis Error on receiving chunk 1: KEY 1@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 EcRedis Error on receiving chunk 6: KEY 6@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 Proxy KEY 0@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 EcRedis Error on receiving chunk 7: KEY 7@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 Proxy KEY 10@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 EcRedis Error on receiving chunk 0: KEY 0@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 EcRedis Error on receiving chunk 10: KEY 10@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 EcRedis Error on receiving chunk 9: KEY 9@v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in lambda store, please set first.
+2020/02/09 07:57:20 Placer Lambda 300 size updated: 730000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, change:30000000).
+2020/02/09 07:57:20 Proxy Requesting to set 11@v2/4715bf52/d06c2db5/blobs/dfc826e2: 300
+2020/02/09 07:57:20 Placer Lambda 263 size updated: 850000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, change:30000000).
+2020/02/09 07:57:20 Proxy Requesting to set 0@v2/4715bf52/d06c2db5/blobs/dfc826e2: 263
+2020/02/09 07:57:20 Placer Lambda 358 size updated: 640000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, change:30000000).
+2020/02/09 07:57:20 Proxy Requesting to set 4@v2/4715bf52/d06c2db5/blobs/dfc826e2: 358
+2020/02/09 07:57:20 Placer Lambda 260 size updated: 940000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, change:30000000).
+2020/02/09 07:57:20 Proxy Requesting to set 2@v2/4715bf52/d06c2db5/blobs/dfc826e2: 260
+2020/02/09 07:57:20 Placer Lambda 318 size updated: 550000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, evict:v2/4715bf52/d06c2db5/blobs/b1dc940b, Δ:0).
+2020/02/09 07:57:20 Placer Lambda 360 size updated: 460000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, evict:v2/4715bf52/d06c2db5/blobs/b1dc940b, Δ:0).
+2020/02/09 07:57:20 Placer Lambda 241 size updated: 670000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, evict:v2/4715bf52/d06c2db5/blobs/b1dc940b, Δ:0).
+2020/02/09 07:57:20 Placer Lambda 263 size updated: 850000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, evict:v2/4715bf52/d06c2db5/blobs/b1dc940b, Δ:0).
+2020/02/09 07:57:20 Placer Lambda 322 size updated: 670000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, evict:v2/4715bf52/d06c2db5/blobs/b1dc940b, Δ:0).
+2020/02/09 07:57:20 Placer Lambda 265 size updated: 610000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, evict:v2/4715bf52/d06c2db5/blobs/b1dc940b, Δ:0).
+2020/02/09 07:57:20 Placer Lambda 335 size updated: 970000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, evict:v2/4715bf52/d06c2db5/blobs/b1dc940b, Δ:0).
+2020/02/09 07:57:20 Placer Lambda 213 size updated: 1000000000 of 1024000000 (key:v2/4715bf52/d06c2db5/blobs/dfc826e2, evict:v2/4715bf52/d06c2db5/blobs/b1dc940b, Δ:0).
+2020/02/09 07:57:20 Proxy Requesting to set 5@v2/4715bf52/d06c2db5/blobs/dfc826e2: 241
+2020/02/09 07:57:20 Proxy Requesting to set 3@v2/4715bf52/d06c2db5/blobs/dfc826e2: 360
+2020/02/09 07:57:20 Proxy Requesting to set 1@v2/4715bf52/d06c2db5/blobs/dfc826e2: 318
+2020/02/09 07:57:20 Proxy Requesting to set 8@v2/4715bf52/d06c2db5/blobs/dfc826e2: 265
+2020/02/09 07:57:20 Proxy Requesting to set 9@v2/4715bf52/d06c2db5/blobs/dfc826e2: 335
+2020/02/09 07:57:20 Proxy Requesting to set 10@v2/4715bf52/d06c2db5/blobs/dfc826e2: 213
+2020/02/09 07:57:20 Proxy Requesting to set 6@v2/4715bf52/d06c2db5/blobs/dfc826e2: 263
+2020/02/09 07:57:20 Proxy Requesting to set 7@v2/4715bf52/d06c2db5/blobs/dfc826e2: 322
+2020/02/09 07:57:21 EcRedis Set v2/4715bf52/d06c2db5/blobs/dfc826e2 584484790
+2020/02/09 07:57:21 Reset v2/4715bf52/d06c2db5/blobs/dfc826e2.
+2020/02/09 07:57:21 Placement changed on reset v2/4715bf52/d06c2db5/blobs/dfc826e2, 276 -> 263
+2020/02/09 07:57:21 Placement changed on reset v2/4715bf52/d06c2db5/blobs/dfc826e2, 307 -> 318
+2020/02/09 07:57:21 Placement changed on reset v2/4715bf52/d06c2db5/blobs/dfc826e2, 342 -> 260
+2020/02/09 07:57:21 Placement changed on reset v2/4715bf52/d06c2db5/blobs/dfc826e2, 297 -> 360
+2020/02/09 07:57:21 Placement changed on reset v2/4715bf52/d06c2db5/blobs/dfc826e2, 239 -> 358
+2020/02/09 07:57:21 Placement changed on reset v2/4715bf52/d06c2db5/blobs/dfc826e2, 266 -> 241
+2020/02/09 07:57:21 Placement changed on reset v2/4715bf52/d06c2db5/blobs/dfc826e2, 330 -> 263
+2020/02/09 07:57:21 Placement changed on reset v2/4715bf52/d06c2db5/blobs/dfc826e2, 279 -> 322
+2020/02/09 07:57:21 Placement changed on reset v2/4715bf52/d06c2db5/blobs/dfc826e2, 344 -> 265
+2020/02/09 07:57:21 Placement changed on reset v2/4715bf52/d06c2db5/blobs/dfc826e2, 374 -> 335
+2020/02/09 07:57:21 Placement changed on reset v2/4715bf52/d06c2db5/blobs/dfc826e2, 263 -> 213
+2020/02/09 07:57:21 Placement changed on reset v2/4715bf52/d06c2db5/blobs/dfc826e2, 244 -> 300
+2020/02/09 07:57:21 csv,4429aa7b-2989-4ff3-bfa2-5217a2c80c8e,v2/4715bf52/d06c2db5/blobs/dfc826e2,2636786000000,2577330724062
+2020/02/09 08:30:30 2586 Playbacking v2/4715bf52/d06c2db5/blobs/dfc826e2(exp 56m16.663s, act 1h16m6.704117284s)...
+2020/02/09 08:30:30 find placement,[263 318 260 360 358 241 263 322 265 335 213 300],v2/4715bf52/d06c2db5/blobs/dfc826e2
+2020/02/09 08:30:30 Proxy Requesting to get 11@v2/4715bf52/d06c2db5/blobs/dfc826e2: 300
+2020/02/09 08:30:30 Proxy Requesting to get 2@v2/4715bf52/d06c2db5/blobs/dfc826e2: 260
+2020/02/09 08:30:30 Proxy Requesting to get 4@v2/4715bf52/d06c2db5/blobs/dfc826e2: 358
+2020/02/09 08:30:30 Proxy Requesting to get 7@v2/4715bf52/d06c2db5/blobs/dfc826e2: 322
+2020/02/09 08:30:30 Proxy Requesting to get 6@v2/4715bf52/d06c2db5/blobs/dfc826e2: 263
+2020/02/09 08:30:30 Proxy Requesting to get 8@v2/4715bf52/d06c2db5/blobs/dfc826e2: 265
+2020/02/09 08:30:30 Proxy Requesting to get 0@v2/4715bf52/d06c2db5/blobs/dfc826e2: 263
+2020/02/09 08:30:30 Proxy Requesting to get 5@v2/4715bf52/d06c2db5/blobs/dfc826e2: 241
+2020/02/09 08:30:30 Proxy Requesting to get 1@v2/4715bf52/d06c2db5/blobs/dfc826e2: 318
+2020/02/09 08:30:30 Proxy Requesting to get 3@v2/4715bf52/d06c2db5/blobs/dfc826e2: 360
+2020/02/09 08:30:30 Proxy Requesting to get 9@v2/4715bf52/d06c2db5/blobs/dfc826e2: 335
+2020/02/09 08:30:30 Proxy Requesting to get 10@v2/4715bf52/d06c2db5/blobs/dfc826e2: 213
+2020/02/09 08:30:30 Store1VPCNode335 Response error: Failed to get 9@v2/4715bf52/d06c2db5/blobs/dfc826e2: Key not found
+2020/02/09 08:30:30 EcRedis Error on receiving chunk 9: Response error: Failed to get 9@v2/4715bf52/d06c2db5/blobs/dfc826e2: Key not found
+2020/02/09 08:30:31 EcRedis Got v2/4715bf52/d06c2db5/blobs/dfc826e2 363750511 ( 311145494 52601085 )
+2020/02/09 08:30:31 Proxy Requesting to set 9@v2/4715bf52/d06c2db5/blobs/dfc826e2: 335
+2020/02/09 08:30:31 EcRedis Succeeded to recover shards of v2/4715bf52/d06c2db5/blobs/dfc826e2: [9]
+2020/02/09 08:30:31 Get v2/4715bf52/d06c2db5/blobs/dfc826e2.
+2020/02/09 08:30:31 Unexpected key v2/4715bf52/d06c2db5/blobs/dfc826e2 not found in 263
+panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x18 pc=0x921ba1]
+
+goroutine 1 [running]:
+main.perform(0xc0001aad00, 0xb9c640, 0xc0000ab0e0, 0xc0000b0500, 0xc012de67b0, 0xc000077b20, 0x4, 0x4, 0x0)
+	/home/ubuntu/go/src/github.com/wangaoone/redbench/simulator/playback/sim.go:163 +0xb21
+main.main()
+	/home/ubuntu/go/src/github.com/wangaoone/redbench/simulator/playback/sim.go:398 +0x15c5
