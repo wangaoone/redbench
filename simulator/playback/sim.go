@@ -208,8 +208,8 @@ func initProxies(nProxies int, opts *Options) ([]proxy.Proxy, *consistent.Consis
 		proxies[i].Evicts = make(map[string]*proxy.Chunk)
 		if opts.Balance {
 			//proxies[i].Balancer = &proxy.LRUPlacer{}
-			//proxies[i].Balancer = &proxy.PriorityBalancer{}
-			proxies[i].Balancer = &proxy.WeightedBalancer{}
+			proxies[i].Balancer = &proxy.PriorityBalancer{}
+			//proxies[i].Balancer = &proxy.WeightedBalancer{}
 			proxies[i].Init()
 		}
 
@@ -399,7 +399,7 @@ func main() {
 
 	totalMem := float64(0)
 	maxMem := float64(0)
-	minMem := float64(options.MaxSz)
+	minMem := float64(10000000000000)
 	maxChunks := float64(0)
 	minChunks := float64(1000)
 	set := 0
