@@ -2,14 +2,16 @@ package proxy
 
 import (
 	"container/heap"
-	syslog "log"
 	"fmt"
+	"log"
 )
 
 // A PriorityQueue implements heap.Interface and holds Items.
 type PriorityQueue []*Lambda
 
-func (pq PriorityQueue) Len() int { return len(pq) }
+func (pq PriorityQueue) Len() int {
+	return len(pq)
+}
 
 func (pq PriorityQueue) Less(i, j int) bool {
 	// We want Pop to give us the highest, not lowest, priority so we use greater than here.
@@ -33,15 +35,15 @@ func (pq *PriorityQueue) Pop() interface{} {
 	old := *pq
 	n := len(old)
 	lambda := old[n-1]
-	old[n-1] = nil  // avoid memory leak
+	old[n-1] = nil // avoid memory leak
 	lambda.block = -1
 	*pq = old[0 : n-1]
 	return lambda
 }
 
 type PriorityBalancer struct {
-	proxy        *Proxy
-	minority     PriorityQueue
+	proxy    *Proxy
+	minority PriorityQueue
 }
 
 func (b *PriorityBalancer) SetProxy(p *Proxy) {
@@ -76,5 +78,12 @@ func (b *PriorityBalancer) dump() {
 	for _, lambda := range b.minority {
 		msg = fmt.Sprintf(msg, lambda.Id, lambda.MemUsed, ",[%d:%d]%s")
 	}
-	syslog.Printf(msg, 0, 0, "\n")
+	log.Printf(msg, 0, 0, "\n")
+}
+func (b *PriorityBalancer) Validate(*Object) bool {
+	return true
+}
+
+func (b *PriorityBalancer) Close() {
+	log.Println("close")
 }

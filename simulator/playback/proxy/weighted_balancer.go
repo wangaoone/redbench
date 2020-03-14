@@ -1,7 +1,7 @@
 package proxy
 
 import (
-	// syslog "log"
+	"log"
 	"math"
 )
 
@@ -17,7 +17,7 @@ func (b *WeightedBalancer) SetProxy(p *Proxy) {
 }
 
 func (b *WeightedBalancer) Init() {
-	b.lambdaBlocks = make([]int, 100 * len(b.proxy.LambdaPool))
+	b.lambdaBlocks = make([]int, 100*len(b.proxy.LambdaPool))
 	for j := 0; j < len(b.proxy.LambdaPool); j++ {
 		b.proxy.LambdaPool[j].blocks = make([]int, 100)
 	}
@@ -34,24 +34,24 @@ func (b *WeightedBalancer) Init() {
 func (b *WeightedBalancer) Remap(placements []int, _ *Object) []int {
 	for i, placement := range placements {
 		// Mapping to lambda in nextGroup
-		placements[i] = b.lambdaBlocks[b.nextGroup * 100 + placement]
+		placements[i] = b.lambdaBlocks[b.nextGroup*100+placement]
 	}
-	b.nextGroup = int(math.Mod(float64(b.nextGroup + 1), 100))
+	b.nextGroup = int(math.Mod(float64(b.nextGroup+1), 100))
 	return placements
 }
 
 func (b *WeightedBalancer) Adapt(j int, _ *Chunk) {
 	// Remove a block from lambda, and allocated to nextLambda
 	l := &b.proxy.LambdaPool[j]
-	for int(math.Floor(float64(l.MemUsed) / float64(l.Capacity) * 100)) > l.UsedPercentile {
-//		syslog.Printf("Left blocks on lambda %d: %d", j, len(l.blocks))
+	for int(math.Floor(float64(l.MemUsed)/float64(l.Capacity)*100)) > l.UsedPercentile {
+		//		syslog.Printf("Left blocks on lambda %d: %d", j, len(l.blocks))
 		if len(l.blocks) == 0 {
 			break
 		}
 
 		// Skip current lambda
 		if b.nextLambda == j {
-			b.nextLambda = int(math.Mod(float64(b.nextLambda + 1), float64(len(b.proxy.LambdaPool))))
+			b.nextLambda = int(math.Mod(float64(b.nextLambda+1), float64(len(b.proxy.LambdaPool))))
 		}
 
 		// Get block idx to be reallocated
@@ -60,7 +60,7 @@ func (b *WeightedBalancer) Adapt(j int, _ *Chunk) {
 		// Remove block from lambda
 		l.blocks = l.blocks[1:]
 
-		// Add blcok to next lambda
+		// Add block to next lambda
 		nextL := &b.proxy.LambdaPool[b.nextLambda]
 		nextL.blocks = append(nextL.blocks, reallocIdx)
 
@@ -68,8 +68,16 @@ func (b *WeightedBalancer) Adapt(j int, _ *Chunk) {
 		b.lambdaBlocks[reallocIdx] = b.nextLambda
 
 		// Move on
-		b.nextLambda = int(math.Mod(float64(b.nextLambda + 1), float64(len(b.proxy.LambdaPool))))
+		b.nextLambda = int(math.Mod(float64(b.nextLambda+1), float64(len(b.proxy.LambdaPool))))
 
 		l.UsedPercentile++
 	}
+}
+
+func (b *WeightedBalancer) Validate(*Object) bool {
+	return true
+}
+
+func (b *WeightedBalancer) Close() {
+	log.Println("close")
 }

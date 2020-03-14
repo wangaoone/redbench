@@ -6,12 +6,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/buraksezer/consistent"
-	"github.com/cespare/xxhash"
-	"github.com/dustin/go-humanize"
-	"github.com/mason-leap-lab/infinicache/common/logger"
-	"github.com/mason-leap-lab/infinicache/client"
-	"github.com/mason-leap-lab/infinicache/proxy/global"
 	"io"
 	syslog "log"
 	"math"
@@ -21,19 +15,26 @@ import (
 	"strings"
 	"time"
 
+	"github.com/buraksezer/consistent"
+	"github.com/cespare/xxhash"
+	"github.com/dustin/go-humanize"
+	"github.com/mason-leap-lab/infinicache/client"
+	"github.com/mason-leap-lab/infinicache/common/logger"
+	"github.com/mason-leap-lab/infinicache/proxy/global"
+
 	"github.com/wangaoone/redbench/simulator/playback/proxy"
 )
 
 const (
-	TIME_PATTERN = "2006-01-02 15:04:05.000"
+	TIME_PATTERN  = "2006-01-02 15:04:05.000"
 	TIME_PATTERN2 = "2006-01-02 15:04:05"
 )
 
 var (
-	log           = &logger.ColorLogger{
+	log = &logger.ColorLogger{
 		Verbose: true,
-		Level: logger.LOG_LEVEL_ALL,
-		Color: true,
+		Level:   logger.LOG_LEVEL_ALL,
+		Color:   true,
 	}
 )
 
@@ -63,7 +64,7 @@ type Options struct {
 	Skip           int64
 	S3             string
 	Redis          string
-	RedisCluster	 bool
+	RedisCluster   bool
 	Balance        bool
 }
 
@@ -201,12 +202,14 @@ func initProxies(nProxies int, opts *Options) ([]proxy.Proxy, *consistent.Consis
 		for j, _ := range proxies[i].LambdaPool {
 			proxies[i].LambdaPool[j].Id = j
 			proxies[i].LambdaPool[j].Kvs = make(map[string]*proxy.Chunk)
-			proxies[i].LambdaPool[j].MemUsed = 100 * 1000000     // MB
-			proxies[i].LambdaPool[j].Capacity = 1024 * 1000000    // MB
+			proxies[i].LambdaPool[j].MemUsed = 100 * 1000000   // MB
+			proxies[i].LambdaPool[j].Capacity = 1024 * 1000000 // MB
 		}
 		proxies[i].Evicts = make(map[string]*proxy.Chunk)
 		if opts.Balance {
-			proxies[i].Balancer = &proxy.LRUPlacer{}
+			//proxies[i].Balancer = &proxy.LRUPlacer{}
+			//proxies[i].Balancer = &proxy.PriorityBalancer{}
+			proxies[i].Balancer = &proxy.WeightedBalancer{}
 			proxies[i].Init()
 		}
 
@@ -288,7 +291,7 @@ func main() {
 		cli = NewS3Client(options.S3)
 	} else if options.Redis != "" {
 		cli = NewRedisClient(options.Redis)
-	} else if options.RedisCluster == true{
+	} else if options.RedisCluster == true {
 		cli = NewClusterRedisClient()
 	} else {
 		cli = client.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
@@ -296,7 +299,6 @@ func main() {
 			cli.(*client.Client).Dial(addrArr)
 		}
 	}
-
 
 	reader := csv.NewReader(bufio.NewReader(traceFile))
 	// Skip first line
@@ -331,10 +333,10 @@ func main() {
 			continue
 		}
 		obj := &proxy.Object{
-			Key:       line[6],
-			Sz:        uint64(sz),
-			ChunkSz:   uint64(sz) / uint64(options.Datashard),
-			Time:      t,
+			Key:     line[6],
+			Sz:      uint64(sz),
+			ChunkSz: uint64(sz) / uint64(options.Datashard),
+			Time:    t,
 		}
 		if obj.Sz > options.MaxSz {
 			obj.Sz = options.MaxSz
@@ -367,13 +369,13 @@ func main() {
 			// On skiping, use elapsed to record time.
 			if read >= options.Skip {
 				if timeout > 0 {
-					log.Info("Playback %d in %v", read + 1, timeout)
+					log.Info("Playback %d in %v", read+1, timeout)
 				}
 				timer.Reset(timeout)
 			} else {
 				skipedDuration += timeout
 				if timeout > 0 {
-					log.Info("Skip %d: %v", read + 1, timeout)
+					log.Info("Skip %d: %v", read+1, timeout)
 				}
 			}
 		} else {
@@ -383,12 +385,12 @@ func main() {
 		var reqId string
 		if read >= options.Skip {
 			<-timer.C
-			log.Info("%d Playbacking %v(exp %v, act %v)...", read + 1, obj.Key, obj.Time.Sub(startObject.Time), skipedDuration + time.Since(start))
+			log.Info("%d Playbacking %v(exp %v, act %v)...", read+1, obj.Key, obj.Time.Sub(startObject.Time), skipedDuration+time.Since(start))
 			member := ring.LocateKey([]byte(obj.Key))
 			hostId := member.String()
 			id, _ := strconv.Atoi(hostId)
 			_, reqId = perform(options, cli, &proxies[id], obj)
-			log.Debug("csv,%s,%s,%d,%d", reqId, obj.Key, int64(obj.Time.Sub(startObject.Time)), int64(skipedDuration + time.Since(start)))
+			log.Debug("csv,%s,%s,%d,%d", reqId, obj.Key, int64(obj.Time.Sub(startObject.Time)), int64(skipedDuration+time.Since(start)))
 		}
 
 		lastObject = obj
@@ -419,7 +421,7 @@ func main() {
 				got += chk.Freq
 				reset += chk.Reset
 			}
-			activated += lambda.ActiveMinites
+			activated += lambda.ActiveMinutes
 		}
 		for _, chk := range prxy.Evicts {
 			got += chk.Freq
@@ -428,11 +430,11 @@ func main() {
 		balancerCost += prxy.BalancerCost
 		prxy.Close()
 	}
-	syslog.Printf("Total records: %d\n", read - options.Skip)
+	syslog.Printf("Total records: %d\n", read-options.Skip)
 	syslog.Printf("Total memory consumed: %s\n", humanize.Bytes(uint64(totalMem)))
 	syslog.Printf("Memory consumed per lambda: %s - %s\n", humanize.Bytes(uint64(minMem)), humanize.Bytes(uint64(maxMem)))
 	syslog.Printf("Chunks per lambda: %d - %d\n", int(minChunks), int(maxChunks))
 	syslog.Printf("Set %d, Got %d, Reset %d\n", set, got, reset)
 	syslog.Printf("Active Minutes %d\n", activated)
-	syslog.Printf("BalancerCost: %s(%s per request)", balancerCost, balancerCost / time.Duration(read - options.Skip))
+	syslog.Printf("BalancerCost: %s(%s per request)", balancerCost, balancerCost/time.Duration(read-options.Skip))
 }

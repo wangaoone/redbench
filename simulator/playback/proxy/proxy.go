@@ -5,37 +5,37 @@ import (
 )
 
 type Chunk struct {
-	Key  string
-	Sz   uint64
-	Freq uint64
+	Key   string
+	Sz    uint64
+	Freq  uint64
 	Reset uint64
 }
 
 type Object struct {
-	Key       string
-	Sz        uint64
-	ChunkSz   uint64
-	Time      time.Time
+	Key     string
+	Sz      uint64
+	ChunkSz uint64
+	Time    time.Time
 }
 
 type Lambda struct {
-	Id      int
-	Kvs     map[string]*Chunk
-	MemUsed uint64
-	ActiveMinites int
-	LastActive time.Time
-	Capacity uint64
+	Id             int
+	Kvs            map[string]*Chunk
+	MemUsed        uint64
+	ActiveMinutes  int
+	LastActive     time.Time
+	Capacity       uint64
 	UsedPercentile int
 
-	block    int
-	blocks   []int
+	block  int
+	blocks []int
 }
 
 func (l *Lambda) Activate(recTime time.Time) {
-	if l.ActiveMinites == 0  {
-		l.ActiveMinites++
+	if l.ActiveMinutes == 0 {
+		l.ActiveMinutes++
 	} else if recTime.Sub(l.LastActive) >= time.Minute {
-		l.ActiveMinites++
+		l.ActiveMinutes++
 	}
 	l.LastActive = recTime
 }
