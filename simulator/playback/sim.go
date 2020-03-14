@@ -335,7 +335,6 @@ func main() {
 		obj := &proxy.Object{
 			Key:     line[6],
 			Sz:      uint64(sz),
-			ChunkSz: uint64(sz) / uint64(options.Datashard),
 			Time:    t,
 		}
 		if obj.Sz > options.MaxSz {
@@ -344,6 +343,7 @@ func main() {
 		if obj.Sz > options.ScaleFrom {
 			obj.Sz = uint64(float64(obj.Sz) * options.ScaleSz)
 		}
+		obj.ChunkSz = obj.Sz / uint64(options.Datashard)
 
 		if lastObject != nil {
 			if !timer.Stop() {
