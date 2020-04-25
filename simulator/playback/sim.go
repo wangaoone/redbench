@@ -18,9 +18,10 @@ import (
 	"github.com/buraksezer/consistent"
 	"github.com/cespare/xxhash"
 	"github.com/dustin/go-humanize"
-	"github.com/mason-leap-lab/infinicache/client"
+	//"github.com/mason-leap-lab/infinicache/client"
 	"github.com/mason-leap-lab/infinicache/common/logger"
 	"github.com/mason-leap-lab/infinicache/proxy/global"
+	client "github.com/wangaoone/ecRedis"
 
 	"github.com/wangaoone/redbench/simulator/playback/proxy"
 )
@@ -333,9 +334,9 @@ func main() {
 			continue
 		}
 		obj := &proxy.Object{
-			Key:     line[6],
-			Sz:      uint64(sz),
-			Time:    t,
+			Key:  line[6],
+			Sz:   uint64(sz),
+			Time: t,
 		}
 		if obj.Sz > options.MaxSz {
 			obj.Sz = options.MaxSz
