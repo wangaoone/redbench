@@ -214,7 +214,7 @@ func Bench(
 					if i+n > crequests {
 						n = crequests - i
 					}
-					key := genKey(opts.Keymin, opts.Keymax, opts.Op, i)
+					key := genKey(opts.Keymin, opts.Keymax, opts.Op, i * opts.Clients + cid)
 					/*
 						buf = buf[:0]
 						for i := 0; i < n; i++ {
