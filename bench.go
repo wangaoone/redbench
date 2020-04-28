@@ -9,7 +9,7 @@ import (
 	"github.com/ScottMansfield/nanolog"
 
 	//"github.com/pkg/profile"
-	"github.com/mason-leap-lab/infinicache/client"
+	infinicache "github.com/mason-leap-lab/infinicache/client"
 	"github.com/go-redis/redis/v7"
 	"io"
 	"io/ioutil"
@@ -159,44 +159,30 @@ func Bench(
 	remaining := int64(opts.Clients)
 	errs := make([]error, opts.Clients)
 	durs := make([][]time.Duration, opts.Clients)
-	clis := make([]*client.Client, opts.Clients)
-	var redisCli *redis.Client
+	clis := make([]interface{}, opts.Clients)
 
 	// create all clients
-	if opts.ClientLib == CLIENT_REDIS {
-		redisCli = redis.NewClient(&redis.Options{
-			Addr:     opts.AddrList,
-			Password: "", // no password set
-			DB:       0,  // use default DB
-		})
-	} else {
-		for i := 0; i < opts.Clients; i++ {
-			crequests := rpc
-			durs[i] = make([]time.Duration, crequests)
-			for j := 0; j < len(durs[i]); j++ {
-				durs[i][j] = -1
-			}
-			//conn, err := net.Dial("tcp", addr)
+	for i := 0; i < opts.Clients; i++ {
+		crequests := rpc
+		durs[i] = make([]time.Duration, crequests)
+		for j := 0; j < len(durs[i]); j++ {
+			durs[i][j] = -1
+		}
+		//conn, err := net.Dial("tcp", addr)
 
+		if opts.ClientLib == CLIENT_REDIS {
+			cli := redis.NewClient(&redis.Options{
+				Addr:     opts.AddrList,
+				Password: "", // no password set
+				DB:       0,  // use default DB
+			})
+			defer cli.Close()
+			clis[i] = cli
+		} else {
 			addrArr := strings.Split(opts.AddrList, ",")
 			log.Println("number of hosts: ", len(addrArr))
-			cli := client.NewClient(opts.Datashard, opts.Parityshard, opts.ECmaxgoroutine)
+			cli := infinicache.NewClient(opts.Datashard, opts.Parityshard, opts.ECmaxgoroutine)
 			cli.Dial(addrArr)
-			/*
-				if err != nil {
-					if i == 0 {
-						fmt.Fprintf(opts.Stderr, "%s\n", err.Error())
-						return
-					}
-					errs[i] = err
-				}
-				if conn != nil && prep != nil {
-					if !prep(conn) {
-						conn.Close()
-						conn = nil
-					}
-				}
-				conns[i] = conn*/
 			defer cli.Close()
 			clis[i] = cli
 		}
@@ -212,8 +198,7 @@ func Bench(
 		val := make([]byte, opts.Objsz)
 		rand.Read(val)
 
-		//go func(conn net.Conn, client, crequests int) {
-		go func(cli *client.Client, cid, crequests int) {
+		go func(cli interface{}, cid, crequests int) {
 			defer func() {
 				atomic.AddInt64(&remaining, -1)
 			}()
@@ -243,21 +228,21 @@ func Bench(
 					//cli.EcSet("key", val)
 					if opts.ClientLib == CLIENT_REDIS {
 						if opts.Op == 0 {
-							err := redisCli.Set(key, val, 0).Err()
+							err := cli.(*redis.Client).Set(key, val, 0).Err()
 							if err != nil {
-								panic(err)
+								log.Fatal(err)
 							}
 						} else {
-							_, err := redisCli.Get(key).Result()
+							_, err := cli.(*redis.Client).Get(key).Result()
 							if err != nil {
-								panic(err)
+								log.Fatal(err)
 							}
 						}
 					} else {
 						if opts.Op == 0 {
-							cli.EcSet(key, val)
+							cli.(*infinicache.Client).EcSet(key, val)
 						} else {
-							_, reader, ok := cli.EcGet(key, len(val))
+							_, reader, ok := cli.(*infinicache.Client).EcGet(key, len(val))
 							if ok {
 								reader.Close()	// By closing the reader, we save memory.
 							}
@@ -409,6 +394,7 @@ func helpInfo() {
 	fmt.Println("  -file: print result to file")
 	fmt.Println("  -h: print out help info?")
 	fmt.Println("  -i: interval for every request (ms)")
+	fmt.Println("  -cli: client library used, try \"infinicache\" or \"redis\".")
 }
 
 func nanoLog(handle nanolog.Handle, args ...interface{}) error {
