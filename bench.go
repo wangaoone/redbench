@@ -10,6 +10,7 @@ import (
 
 	//"github.com/pkg/profile"
 	"github.com/mason-leap-lab/infinicache/client"
+	"github.com/go-redis/redis/v7"
 	"io"
 	"io/ioutil"
 	"log"
@@ -20,6 +21,11 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+)
+
+const (
+	CLIENT_INFINICACHE = "infinicache"
+	CLIENT_REDIS = "redis"
 )
 
 func readResp(rd *bufio.Reader, n int, opts *Options) error {
@@ -76,6 +82,7 @@ type Options struct {
 	Printlog       bool
 	File           string
 	Interval       int64
+	ClientLib      string
 }
 
 // DefaultsOptions are the default options used by the Bench() function.
@@ -99,6 +106,7 @@ var DefaultOptions = &Options{
 	Printlog:       true,
 	File:           "test.txt",
 	Interval:       0,
+	ClientLib:      CLIENT_INFINICACHE,
 }
 
 func getRandomRange(min int, max int) int {
@@ -152,37 +160,46 @@ func Bench(
 	errs := make([]error, opts.Clients)
 	durs := make([][]time.Duration, opts.Clients)
 	clis := make([]*client.Client, opts.Clients)
+	var redisCli *redis.Client
 
 	// create all clients
-	for i := 0; i < opts.Clients; i++ {
-		crequests := rpc
-		durs[i] = make([]time.Duration, crequests)
-		for j := 0; j < len(durs[i]); j++ {
-			durs[i][j] = -1
-		}
-		//conn, err := net.Dial("tcp", addr)
+	if opts.ClientLib == CLIENT_REDIS {
+		redisCli = redis.NewClient(&redis.Options{
+			Addr:     opts.AddrList,
+			Password: "", // no password set
+			DB:       0,  // use default DB
+		})
+	} else {
+		for i := 0; i < opts.Clients; i++ {
+			crequests := rpc
+			durs[i] = make([]time.Duration, crequests)
+			for j := 0; j < len(durs[i]); j++ {
+				durs[i][j] = -1
+			}
+			//conn, err := net.Dial("tcp", addr)
 
-		addrArr := strings.Split(opts.AddrList, ",")
-		log.Println("number of hosts: ", len(addrArr))
-		cli := client.NewClient(opts.Datashard, opts.Parityshard, opts.ECmaxgoroutine)
-		cli.Dial(addrArr)
-		/*
-			if err != nil {
-				if i == 0 {
-					fmt.Fprintf(opts.Stderr, "%s\n", err.Error())
-					return
+			addrArr := strings.Split(opts.AddrList, ",")
+			log.Println("number of hosts: ", len(addrArr))
+			cli := client.NewClient(opts.Datashard, opts.Parityshard, opts.ECmaxgoroutine)
+			cli.Dial(addrArr)
+			/*
+				if err != nil {
+					if i == 0 {
+						fmt.Fprintf(opts.Stderr, "%s\n", err.Error())
+						return
+					}
+					errs[i] = err
 				}
-				errs[i] = err
-			}
-			if conn != nil && prep != nil {
-				if !prep(conn) {
-					conn.Close()
-					conn = nil
+				if conn != nil && prep != nil {
+					if !prep(conn) {
+						conn.Close()
+						conn = nil
+					}
 				}
-			}
-			conns[i] = conn*/
-		defer cli.Close()
-		clis[i] = cli
+				conns[i] = conn*/
+			defer cli.Close()
+			clis[i] = cli
+		}
 	}
 
 	tstart := time.Now()
@@ -224,12 +241,26 @@ func Bench(
 					start := time.Now()
 					//_, err := conn.Write(buf)
 					//cli.EcSet("key", val)
-					if opts.Op == 0 {
-						cli.EcSet(key, val)
+					if opts.ClientLib == CLIENT_REDIS {
+						if opts.Op == 0 {
+							err := redisCli.Set(key, val, 0).Err()
+							if err != nil {
+								panic(err)
+							}
+						} else {
+							_, err := redisCli.Get(key).Result()
+							if err != nil {
+								panic(err)
+							}
+						}
 					} else {
-						_, reader, ok := cli.EcGet(key, len(val))
-						if ok {
-							reader.Close()	// By closing the reader, we save memory.
+						if opts.Op == 0 {
+							cli.EcSet(key, val)
+						} else {
+							_, reader, ok := cli.EcGet(key, len(val))
+							if ok {
+								reader.Close()	// By closing the reader, we save memory.
+							}
 						}
 					}
 					/*if err != nil {
@@ -410,6 +441,7 @@ func main() {
 	flag.BoolVar(&option.Printlog, "log", true, "print debugging log?")
 	flag.StringVar(&option.File, "file", "test", "print result to file")
 	flag.Int64Var(&option.Interval, "i", 0, "interval for every req (ms)")
+	flag.StringVar(&option.ClientLib, "cli", CLIENT_INFINICACHE, "client lib, try \"redis\"")
 
 	flag.Parse()
 
