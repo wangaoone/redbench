@@ -112,7 +112,7 @@ var DefaultOptions = &Options{
 func getRandomRange(min int, max int) int {
 	var rn int
 	rand.Seed(time.Now().UnixNano())
-	rn = rand.Intn(max-min) + min
+	rn = rand.Intn(max - min + 1) + min
 	return rn
 }
 
