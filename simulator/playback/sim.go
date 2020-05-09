@@ -18,10 +18,9 @@ import (
 	"github.com/buraksezer/consistent"
 	"github.com/cespare/xxhash"
 	"github.com/dustin/go-humanize"
-	//"github.com/mason-leap-lab/infinicache/client"
+	"github.com/mason-leap-lab/infinicache/client"
 	"github.com/mason-leap-lab/infinicache/common/logger"
 	"github.com/mason-leap-lab/infinicache/proxy/global"
-	client "github.com/wangaoone/ecRedis"
 
 	"github.com/wangaoone/redbench/simulator/playback/proxy"
 )
