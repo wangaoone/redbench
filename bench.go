@@ -397,11 +397,6 @@ func helpInfo() {
 	fmt.Println("  -cli: client library used, try \"infinicache\" or \"redis\".")
 }
 
-func nanoLog(handle nanolog.Handle, args ...interface{}) error {
-	fmt.Println("args is ", args[1])
-	return nanolog.Log(handle, args...)
-}
-
 func main() {
 	//profile.Start(profile.CPUProfile)
 	//defer profile.Start(profile.CPUProfile).Stop()
@@ -410,24 +405,24 @@ func main() {
 	var printInfo bool
 	flag.BoolVar(&printInfo, "h", false, "help info?")
 
-	option := DefaultOptions
+	options := DefaultOptions
 
-	flag.StringVar(&option.AddrList, "addrlist", "127.0.0.1:6378", "server address:port")
-	flag.IntVar(&option.Requests, "n", 10, "number of requests")
-	flag.IntVar(&option.Clients, "c", 1, "number of clients")
-	flag.IntVar(&option.Pipeline, "pipeline", 1, "number of pipelined requests")
-	flag.IntVar(&option.Keymin, "keymin", 0, "minimum key range")
-	flag.IntVar(&option.Keymax, "keymax", 10, "maximum key range")
-	flag.IntVar(&option.Objsz, "sz", 128, "object data size")
-	flag.IntVar(&option.Datashard, "d", 4, "number of data shards for RS erasure coding")
-	flag.IntVar(&option.Parityshard, "p", 2, "number of parity shards for RS erasure coding")
-	flag.IntVar(&option.ECmaxgoroutine, "g", 32, "max number of goroutines for RS erasure coding")
-	flag.BoolVar(&option.Decoding, "dec", false, "do decoding after Receive()?")
-	flag.IntVar(&option.Op, "op", 0, "operation type")
-	flag.BoolVar(&option.Printlog, "log", true, "print debugging log?")
-	flag.StringVar(&option.File, "file", "test", "print result to file")
-	flag.Int64Var(&option.Interval, "i", 0, "interval for every req (ms)")
-	flag.StringVar(&option.ClientLib, "cli", CLIENT_INFINICACHE, "client lib, try \"redis\"")
+	flag.StringVar(&options.AddrList, "addrlist", "127.0.0.1:6378", "server address:port")
+	flag.IntVar(&options.Requests, "n", 10, "number of requests")
+	flag.IntVar(&options.Clients, "c", 1, "number of clients")
+	flag.IntVar(&options.Pipeline, "pipeline", 1, "number of pipelined requests")
+	flag.IntVar(&options.Keymin, "keymin", 0, "minimum key range")
+	flag.IntVar(&options.Keymax, "keymax", 10, "maximum key range")
+	flag.IntVar(&options.Objsz, "sz", 128, "object data size")
+	flag.IntVar(&options.Datashard, "d", 4, "number of data shards for RS erasure coding")
+	flag.IntVar(&options.Parityshard, "p", 2, "number of parity shards for RS erasure coding")
+	flag.IntVar(&options.ECmaxgoroutine, "g", 32, "max number of goroutines for RS erasure coding")
+	flag.BoolVar(&options.Decoding, "dec", false, "do decoding after Receive()?")
+	flag.IntVar(&options.Op, "op", 0, "operation type")
+	flag.BoolVar(&options.Printlog, "log", true, "print debugging log?")
+	flag.StringVar(&options.File, "file", "", "print result to file")
+	flag.Int64Var(&options.Interval, "i", 0, "interval for every req (ms)")
+	flag.StringVar(&options.ClientLib, "cli", CLIENT_INFINICACHE, "client lib, try \"redis\"")
 
 	flag.Parse()
 
@@ -436,34 +431,31 @@ func main() {
 		os.Exit(0)
 	}
 
-	//optionMap := make(map[string]interface{})
-	//optionMap["file"] = option.File
-	//client.CreateLog(optionMap)
-	logCreate(option)
-	//client.SetLogger(nanoLog)
-	//
-	//nanoLog(client.LogClient, "a", "b", int64(1), int64(2), int64(3))
+	if options.File != "" {
+		logCreate(options)
 
-	f := option.File + "_" + strconv.Itoa(option.Op) + "_summary.txt"
-	file, err := os.Create(f)
-	if err != nil {
-		fmt.Println("Create file failed", err)
+		f := options.File + "_" + strconv.Itoa(options.Op) + "_summary.txt"
+		file, err := os.Create(f)
+		if err != nil {
+			fmt.Printf("Failed to create file: %v\n", err)
+		} else {
+			options.Stdout = file
+			defer file.Close()
+		}
 	}
-	option.Stdout = file
 
-	fmt.Println("Test starting...")
-	Bench(option)
+	fmt.Println("Starting test...")
+	Bench(options)
 
-	file.Close()
-	if err := nanolog.Flush(); err != nil {
-		fmt.Println("log flush err")
+	if options.File != "" {
+		if err := nanolog.Flush(); err != nil {
+			fmt.Printf("Failed to collect data: %v\n", err)
+		}
 	}
 }
 
 //logCreate create the nanoLog
 func logCreate(opts *Options) {
-	// get local time
-	//location, _ := time.LoadLocation("EST")
 	// Set up nanoLog writer
 	path := opts.File + "_" + strconv.Itoa(opts.Op) + "_bench.clog"
 	nanoLogout, err := os.Create(path)
