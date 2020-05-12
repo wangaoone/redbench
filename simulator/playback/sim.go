@@ -21,6 +21,7 @@ import (
 	"github.com/mason-leap-lab/infinicache/client"
 	"github.com/mason-leap-lab/infinicache/common/logger"
 	"github.com/mason-leap-lab/infinicache/proxy/global"
+	customClient "github.com/wangaoone/redbench/simulator/playback/client"
 
 	"github.com/wangaoone/redbench/simulator/playback/proxy"
 )
@@ -288,11 +289,11 @@ func main() {
 	proxies, ring := initProxies(len(addrArr), options)
 	var cli Client
 	if options.S3 != "" {
-		cli = NewS3Client(options.S3)
+		cli = customClient.NewS3Client(options.S3)
 	} else if options.Redis != "" {
-		cli = NewRedisClient(options.Redis)
+		cli = customClient.NewRedisClient(options.Redis)
 	} else if options.RedisCluster == true {
-		cli = NewClusterRedisClient()
+		cli = customClient.NewClusterRedisClient()
 	} else {
 		cli = client.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
 		if !options.Dryrun {

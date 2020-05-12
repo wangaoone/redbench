@@ -1,13 +1,14 @@
-package main
+package customClient
 
 import (
 	"bytes"
-	"github.com/go-redis/redis"
-	"github.com/google/uuid"
-	"github.com/mason-leap-lab/infinicache/common/logger"
 	"io"
 	"io/ioutil"
 	"time"
+
+	"github.com/go-redis/redis"
+	"github.com/google/uuid"
+	"github.com/mason-leap-lab/infinicache/common/logger"
 )
 
 type RedisClient struct {

@@ -1,16 +1,17 @@
-package main
+package customClient
 
 import (
 	"bytes"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/google/uuid"
-	"github.com/mason-leap-lab/infinicache/common/logger"
 	"io"
 	"io/ioutil"
 	"time"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/google/uuid"
+	"github.com/mason-leap-lab/infinicache/common/logger"
 )
 
 type S3Client struct {
@@ -21,11 +22,11 @@ type S3Client struct {
 func NewS3Client(bk string) *S3Client {
 	return &S3Client{
 		bucket: bk,
-		log:    &logger.ColorLogger{
+		log: &logger.ColorLogger{
 			Verbose: true,
-			Level: logger.LOG_LEVEL_ALL,
-			Color: true,
-			Prefix: "S3Client ",
+			Level:   logger.LOG_LEVEL_ALL,
+			Color:   true,
+			Prefix:  "S3Client ",
 		},
 	}
 }
@@ -91,12 +92,12 @@ func (c *S3Client) EcGet(key string, size int, args ...interface{}) (string, io.
 	buff := &aws.WriteAtBuffer{}
 	start := time.Now()
 	_, err := downloader.Download(buff, &s3.GetObjectInput{
-	    Bucket: aws.String(c.bucket),
-	    Key:    aws.String(key),
+		Bucket: aws.String(c.bucket),
+		Key:    aws.String(key),
 	})
 	if err != nil {
-	    c.log.Error("failed to download file: %v", err)
-			return reqId, nil, false
+		c.log.Error("failed to download file: %v", err)
+		return reqId, nil, false
 	}
 	c.log.Info("Get %s %d", key, int64(time.Since(start)))
 
