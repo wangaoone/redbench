@@ -175,6 +175,8 @@ func Bench(
 				Addr:     opts.AddrList,
 				Password: "", // no password set
 				DB:       0,  // use default DB
+				PoolSize: 1,  // use 1 connection per concurrency.
+				MaxRetries: 3,
 			})
 			defer cli.Close()
 			clis[i] = cli
@@ -230,12 +232,12 @@ func Bench(
 						if opts.Op == 0 {
 							err := cli.(*redis.Client).Set(key, val, 0).Err()
 							if err != nil {
-								log.Fatal(err)
+								log.Println(err)
 							}
 						} else {
 							_, err := cli.(*redis.Client).Get(key).Result()
 							if err != nil {
-								log.Fatal(err)
+								log.Println(err)
 							}
 						}
 					} else {
