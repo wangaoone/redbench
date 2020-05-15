@@ -29,6 +29,8 @@ const (
 	CLIENT_REDIS       = "redis"
 	CLIENT_S3          = "s3"
 	CLIENT_ELASTICACHE = "elasticache"
+	CLIENT_FSX         = "fsx"
+	CLIENT_EFS         = "efs"
 )
 
 func readResp(rd *bufio.Reader, n int, opts *Options) error {
@@ -87,6 +89,7 @@ type Options struct {
 	File           string
 	Interval       int64
 	ClientLib      string
+	ClientBase     string
 }
 
 // DefaultsOptions are the default options used by the Bench() function.
@@ -112,6 +115,7 @@ var DefaultOptions = &Options{
 	File:           "test.txt",
 	Interval:       0,
 	ClientLib:      CLIENT_INFINICACHE,
+	ClientBase:     "",
 }
 
 func getRandomRange(min int, max int) int {
@@ -186,9 +190,17 @@ func Bench(
 				MaxRetries: 3,
 			}))
 		case CLIENT_S3:
-			cli = benchclient.NewS3(opts.Bucket)
+			bucket := opts.ClientBase
+			if bucket == "" {
+				bucket = opts.Bucket
+			}
+			cli = benchclient.NewS3(bucket)
 		case CLIENT_ELASTICACHE:
 			cli = benchclient.NewElasticCache()
+		case CLIENT_EFS:
+			fallthrough
+		case CLIENT_FSX:
+			cli = benchclient.NewFile(opts.ClientLib, opts.ClientBase)
 		default:
 			addrArr := strings.Split(opts.AddrList, ",")
 			log.Println("number of hosts: ", len(addrArr))
@@ -405,7 +417,7 @@ func main() {
 	options := DefaultOptions
 
 	flag.StringVar(&options.AddrList, "addrlist", "127.0.0.1:6378", "server address:port")
-	flag.StringVar(&options.Bucket, "bucket", "BUCKET_NAME", "S3 bucket name")
+	flag.StringVar(&options.Bucket, "bucket", "", "S3 bucket name")
 	flag.IntVar(&options.Requests, "n", 10, "number of requests")
 	flag.IntVar(&options.Clients, "c", 1, "number of clients")
 	flag.IntVar(&options.Pipeline, "pipeline", 1, "number of pipelined requests")
@@ -420,7 +432,8 @@ func main() {
 	flag.BoolVar(&options.Printlog, "log", true, "print debugging log?")
 	flag.StringVar(&options.File, "file", "", "print result to file")
 	flag.Int64Var(&options.Interval, "i", 0, "interval for every req (ms)")
-	flag.StringVar(&options.ClientLib, "cli", CLIENT_INFINICACHE, "client lib, try \"redis\", \"s3\", \"elasticache\"")
+	flag.StringVar(&options.ClientLib, "cli", CLIENT_INFINICACHE, "client lib, try \"redis\", \"s3\", \"elasticache\",")
+	flag.StringVar(&options.ClientBase, "cli-base", "", "Bucket for s3 client. Base path for file based client.")
 
 	flag.Parse()
 
