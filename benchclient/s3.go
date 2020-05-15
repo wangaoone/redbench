@@ -1,4 +1,4 @@
-package customClient
+package benchclient
 
 import (
 	"bytes"
@@ -14,24 +14,32 @@ import (
 	"github.com/mason-leap-lab/infinicache/common/logger"
 )
 
-type S3Client struct {
+var (
+	// The session the S3 Downloader will use
+	AWSSession = session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+		Config:            aws.Config{Region: aws.String("us-east-1")},
+	}))
+)
+
+type S3 struct {
 	bucket string
 	log    logger.ILogger
 }
 
-func NewS3Client(bk string) *S3Client {
-	return &S3Client{
+func NewS3(bk string) *S3 {
+	return &S3{
 		bucket: bk,
 		log: &logger.ColorLogger{
 			Verbose: true,
 			Level:   logger.LOG_LEVEL_ALL,
 			Color:   true,
-			Prefix:  "S3Client ",
+			Prefix:  "S3: ",
 		},
 	}
 }
 
-func (c *S3Client) EcSet(key string, val []byte, args ...interface{}) (string, bool) {
+func (c *S3) EcSet(key string, val []byte, args ...interface{}) (string, bool) {
 	reqId := uuid.New().String()
 
 	// Debuging options
@@ -43,14 +51,8 @@ func (c *S3Client) EcSet(key string, val []byte, args ...interface{}) (string, b
 		return reqId, true
 	}
 
-	// The session the S3 Uploader will use
-	sess := session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-		Config:            aws.Config{Region: aws.String("us-east-1")},
-	}))
-
 	// Create an uploader with the session and default options
-	uploader := s3manager.NewUploader(sess)
+	uploader := s3manager.NewUploader(AWSSession)
 
 	// Upload the file to S3.
 	start := time.Now()
@@ -68,7 +70,7 @@ func (c *S3Client) EcSet(key string, val []byte, args ...interface{}) (string, b
 	return reqId, true
 }
 
-func (c *S3Client) EcGet(key string, size int, args ...interface{}) (string, io.ReadCloser, bool) {
+func (c *S3) EcGet(key string, size int, args ...interface{}) (string, io.ReadCloser, bool) {
 	reqId := uuid.New().String()
 
 	var dryrun int
@@ -79,14 +81,8 @@ func (c *S3Client) EcGet(key string, size int, args ...interface{}) (string, io.
 		return reqId, nil, true
 	}
 
-	// The session the S3 Downloader will use
-	sess := session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-		Config:            aws.Config{Region: aws.String("us-east-1")},
-	}))
-
 	// Create a downloader with the session and default options
-	downloader := s3manager.NewDownloader(sess)
+	downloader := s3manager.NewDownloader(AWSSession)
 
 	// Write the contents of S3 Object to the file
 	buff := &aws.WriteAtBuffer{}
@@ -103,4 +99,8 @@ func (c *S3Client) EcGet(key string, size int, args ...interface{}) (string, io.
 
 	data := buff.Bytes()
 	return reqId, ioutil.NopCloser(bytes.NewReader(data)), true
+}
+
+func (c *S3) Close() {
+	// Nothing
 }

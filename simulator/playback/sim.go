@@ -21,7 +21,7 @@ import (
 	"github.com/mason-leap-lab/infinicache/client"
 	"github.com/mason-leap-lab/infinicache/common/logger"
 	"github.com/mason-leap-lab/infinicache/proxy/global"
-	customClient "github.com/wangaoone/redbench/client"
+	"github.com/wangaoone/redbench/benchclient"
 
 	"github.com/wangaoone/redbench/simulator/playback/proxy"
 )
@@ -69,11 +69,6 @@ type Options struct {
 	Balance        bool
 }
 
-type Client interface {
-	EcSet(string, []byte, ...interface{}) (string, bool)
-	EcGet(string, int, ...interface{}) (string, io.ReadCloser, bool)
-}
-
 type Member string
 
 func (m Member) String() string {
@@ -87,7 +82,7 @@ func (h hasher) Sum64(data []byte) uint64 {
 	return xxhash.Sum64(data)
 }
 
-func perform(opts *Options, cli Client, p *proxy.Proxy, obj *proxy.Object) (string, string) {
+func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.Object) (string, string) {
 	dryrun := 0
 	if opts.Dryrun {
 		dryrun = opts.Cluster
@@ -287,13 +282,13 @@ func main() {
 
 	addrArr := strings.Split(options.AddrList, ",")
 	proxies, ring := initProxies(len(addrArr), options)
-	var cli Client
+	var cli benchclient.Client
 	if options.S3 != "" {
-		cli = customClient.NewS3Client(options.S3)
+		cli = benchclient.NewS3(options.S3)
 	} else if options.Redis != "" {
-		cli = customClient.NewRedisClient(options.Redis)
+		cli = benchclient.NewRedis(options.Redis)
 	} else if options.RedisCluster == true {
-		cli = customClient.NewClusterRedisClient()
+		cli = benchclient.NewElasticCache()
 	} else {
 		cli = client.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
 		if !options.Dryrun {

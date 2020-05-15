@@ -6,6 +6,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/go-redis/redis/v7"
+	infinicache "github.com/mason-leap-lab/infinicache/client"
+	"github.com/ScottMansfield/nanolog"
 	"io"
 	"io/ioutil"
 	"log"
@@ -16,13 +19,9 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
-
-	"github.com/ScottMansfield/nanolog"
-	customClient "github.com/wangaoone/redbench/client"
-
-	"github.com/go-redis/redis/v7"
 	//"github.com/pkg/profile"
-	infinicache "github.com/mason-leap-lab/infinicache/client"
+
+	"github.com/wangaoone/redbench/benchclient"
 )
 
 const (
@@ -165,7 +164,7 @@ func Bench(
 	remaining := int64(opts.Clients)
 	errs := make([]error, opts.Clients)
 	durs := make([][]time.Duration, opts.Clients)
-	clis := make([]interface{}, opts.Clients)
+	clis := make([]benchclient.Client, opts.Clients)
 
 	// create all clients
 	for i := 0; i < opts.Clients; i++ {
@@ -176,30 +175,29 @@ func Bench(
 		}
 		//conn, err := net.Dial("tcp", addr)
 
-		if opts.ClientLib == CLIENT_REDIS {
-			cli := redis.NewClient(&redis.Options{
+		var cli benchclient.Client
+		switch opts.ClientLib {
+		case CLIENT_REDIS:
+			cli = benchclient.NewRedisWithBackend(redis.NewClient(&redis.Options{
 				Addr:       opts.AddrList,
 				Password:   "", // no password set
 				DB:         0,  // use default DB
 				PoolSize:   1,  // use 1 connection per concurrency.
 				MaxRetries: 3,
-			})
-			defer cli.Close()
-			clis[i] = cli
-		} else if opts.ClientLib == CLIENT_S3 {
-			cli := customClient.NewS3Client(opts.Bucket)
-			clis[i] = cli
-		} else if opts.ClientLib == CLIENT_ELASTICACHE {
-			cli := customClient.NewRedisClient(opts.AddrList)
-			clis[i] = cli
-		} else {
+			}))
+		case CLIENT_S3:
+			cli = benchclient.NewS3(opts.Bucket)
+		case CLIENT_ELASTICACHE:
+			cli = benchclient.NewElasticCache()
+		default:
 			addrArr := strings.Split(opts.AddrList, ",")
 			log.Println("number of hosts: ", len(addrArr))
-			cli := infinicache.NewClient(opts.Datashard, opts.Parityshard, opts.ECmaxgoroutine)
-			cli.Dial(addrArr)
-			defer cli.Close()
-			clis[i] = cli
+			ic := infinicache.NewClient(opts.Datashard, opts.Parityshard, opts.ECmaxgoroutine)
+			ic.Dial(addrArr)
+			cli = ic
 		}
+		defer cli.Close()
+		clis[i] = cli
 	}
 
 	tstart := time.Now()
@@ -212,7 +210,7 @@ func Bench(
 		val := make([]byte, opts.Objsz)
 		rand.Read(val)
 
-		go func(cli interface{}, cid, crequests int) {
+		go func(cli benchclient.Client, cid, crequests int) {
 			defer func() {
 				atomic.AddInt64(&remaining, -1)
 			}()
@@ -238,46 +236,12 @@ func Bench(
 					*/
 					atomic.AddUint64(&totalPayload, uint64(len(val)))
 					start := time.Now()
-					//_, err := conn.Write(buf)
-					//cli.EcSet("key", val)
-					if opts.ClientLib == CLIENT_REDIS {
-						if opts.Op == 0 {
-							err := cli.(*redis.Client).Set(key, val, 0).Err()
-							if err != nil {
-								log.Println(err)
-							}
-						} else {
-							_, err := cli.(*redis.Client).Get(key).Result()
-							if err != nil {
-								log.Println(err)
-							}
-						}
-					} else if opts.ClientLib == CLIENT_S3 {
-						if opts.Op == 0 {
-							cli.(*customClient.S3Client).EcSet(key, val)
-						} else {
-							_, reader, ok := cli.(*customClient.S3Client).EcGet(key, len(val))
-							if ok {
-								reader.Close() // By closing the reader, we save memory.
-							}
-						}
-					} else if opts.ClientLib == CLIENT_ELASTICACHE {
-						if opts.Op == 0 {
-							cli.(*customClient.RedisClient).EcSet(key, val)
-						} else {
-							_, reader, ok := cli.(*customClient.RedisClient).EcGet(key, len(val))
-							if ok {
-								reader.Close() // By closing the reader, we save memory.
-							}
-						}
+					if opts.Op == 0 {
+						cli.EcSet(key, val)
 					} else {
-						if opts.Op == 0 {
-							cli.(*infinicache.Client).EcSet(key, val)
-						} else {
-							_, reader, ok := cli.(*infinicache.Client).EcGet(key, len(val))
-							if ok {
-								reader.Close() // By closing the reader, we save memory.
-							}
+						_, reader, ok := cli.EcGet(key, len(val))
+						if ok {
+							reader.Close() // By closing the reader, we save memory.
 						}
 					}
 					/*if err != nil {

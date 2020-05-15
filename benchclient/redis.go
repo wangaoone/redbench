@@ -1,4 +1,4 @@
-package customClient
+package benchclient
 
 import (
 	"bytes"
@@ -6,18 +6,13 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 	"github.com/google/uuid"
 	"github.com/mason-leap-lab/infinicache/common/logger"
 )
 
-type RedisClusterClient struct {
-	clusterClient *redis.ClusterClient
-	log           logger.ILogger
-}
-
-func newClusterSession() *redis.ClusterClient {
-	clusterSlots := func() ([]redis.ClusterSlot, error) {
+var (
+	AWSElasticCacheCluster = func() ([]redis.ClusterSlot, error) {
 		slots := []redis.ClusterSlot{
 			// First node with 1 master and 1 slave.
 			{
@@ -59,39 +54,50 @@ func newClusterSession() *redis.ClusterClient {
 		}
 		return slots, nil
 	}
-	client := redis.NewClusterClient(&redis.ClusterOptions{
-		ClusterSlots:  clusterSlots,
-		RouteRandomly: true,
-		//Addrs: []string{
-		//	"trace-0001-001.lqm2mp.0001.use1.cache.amazonaws.com:6379",
-		//	"trace-0002-001.lqm2mp.0001.use1.cache.amazonaws.com:6379",
-		//	"trace-0003-001.lqm2mp.0001.use1.cache.amazonaws.com:6379",
-		//	"trace-0004-001.lqm2mp.0001.use1.cache.amazonaws.com:6379",
-		//	"trace-0005-001.lqm2mp.0001.use1.cache.amazonaws.com:6379"},
-	})
-	//client.Ping()
-	return client
+)
+
+type Redis struct {
+	backend redis.UniversalClient
+	log     logger.ILogger
 }
 
-func NewClusterRedisClient() *RedisClusterClient {
-	clusterClient := newClusterSession()
-	return &RedisClusterClient{
-		clusterClient: clusterClient,
+func NewRedis(addr string) *Redis {
+	backend := redis.NewClient(&redis.Options{
+		Addr:     addr,
+		Password: "", // no password set
+	})
+	return NewRedisWithBackend(backend)
+}
+
+func NewRedisWithBackend(backend redis.UniversalClient) *Redis {
+	//client := newSession(addr)
+	return &Redis{
+		backend: backend,
 		log: &logger.ColorLogger{
 			Verbose: true,
 			Level:   logger.LOG_LEVEL_ALL,
 			Color:   true,
-			Prefix:  "RedisClusterClient ",
+			Prefix:  "Redis: ",
 		},
 	}
 }
 
-func (r *RedisClusterClient) EcSet(key string, val []byte, args ...interface{}) (string, bool) {
+func NewElasticCache() *Redis {
+	return NewRedisWithBackend(redis.NewClusterClient(&redis.ClusterOptions{
+		ClusterSlots:  AWSElasticCacheCluster,
+		RouteRandomly: true,
+	}))
+}
+
+func (r *Redis) EcSet(key string, val []byte, args ...interface{}) (string, bool) {
 	reqId := uuid.New().String()
 	// Debuging options
 	var dryrun int
+	var mark string
 	if len(args) > 0 {
 		dryrun, _ = args[0].(int)
+		mark, _ = args[2].(string)
+
 	}
 	if dryrun > 0 {
 		return reqId, true
@@ -99,16 +105,16 @@ func (r *RedisClusterClient) EcSet(key string, val []byte, args ...interface{}) 
 
 	// set to redis
 	start := time.Now()
-	err := r.clusterClient.Set(key, val, 0).Err()
+	err := r.backend.Set(key, val, 0).Err()
 	if err != nil {
 		r.log.Error("failed to SET file: %v", err)
 		return reqId, false
 	}
-	r.log.Info("Set %s %d", key, int64(time.Since(start)))
+	r.log.Info("%sSet %s %d", mark, key, int64(time.Since(start)))
 	return reqId, true
 }
 
-func (r *RedisClusterClient) EcGet(key string, size int, args ...interface{}) (string, io.ReadCloser, bool) {
+func (r *Redis) EcGet(key string, size int, args ...interface{}) (string, io.ReadCloser, bool) {
 	reqId := uuid.New().String()
 	// Debuging options
 	var dryrun int
@@ -121,11 +127,18 @@ func (r *RedisClusterClient) EcGet(key string, size int, args ...interface{}) (s
 
 	// GET from Redis
 	start := time.Now()
-	val, err := r.clusterClient.Get(key).Bytes()
+	val, err := r.backend.Get(key).Bytes()
 	if err != nil {
 		r.log.Error("failed to GET file: %v", err)
 		return reqId, nil, false
 	}
 	r.log.Info("Get %s %d", key, int64(time.Since(start)))
 	return reqId, ioutil.NopCloser(bytes.NewReader(val)), true
+}
+
+func (r *Redis) Close() {
+	if r.backend != nil {
+		r.backend.Close()
+		r.backend = nil
+	}
 }
