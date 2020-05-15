@@ -21,7 +21,7 @@ import (
 	"github.com/mason-leap-lab/infinicache/client"
 	"github.com/mason-leap-lab/infinicache/common/logger"
 	"github.com/mason-leap-lab/infinicache/proxy/global"
-	customClient "github.com/wangaoone/redbench/simulator/playback/client"
+	customClient "github.com/wangaoone/redbench/client"
 
 	"github.com/wangaoone/redbench/simulator/playback/proxy"
 )
