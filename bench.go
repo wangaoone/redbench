@@ -6,11 +6,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/ScottMansfield/nanolog"
-
-	//"github.com/pkg/profile"
-	infinicache "github.com/mason-leap-lab/infinicache/client"
-	"github.com/go-redis/redis/v7"
 	"io"
 	"io/ioutil"
 	"log"
@@ -21,11 +16,20 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/ScottMansfield/nanolog"
+	customClient "github.com/wangaoone/redbench/client"
+
+	"github.com/go-redis/redis/v7"
+	//"github.com/pkg/profile"
+	infinicache "github.com/mason-leap-lab/infinicache/client"
 )
 
 const (
 	CLIENT_INFINICACHE = "infinicache"
-	CLIENT_REDIS = "redis"
+	CLIENT_REDIS       = "redis"
+	CLIENT_S3          = "s3"
+	CLIENT_ELASTICACHE = "elasticache"
 )
 
 func readResp(rd *bufio.Reader, n int, opts *Options) error {
@@ -64,6 +68,7 @@ func readResp(rd *bufio.Reader, n int, opts *Options) error {
 // Options represents various options used by the Bench() function.
 type Options struct {
 	AddrList       string
+	Bucket         string
 	Requests       int
 	Clients        int
 	Pipeline       int
@@ -88,6 +93,7 @@ type Options struct {
 // DefaultsOptions are the default options used by the Bench() function.
 var DefaultOptions = &Options{
 	AddrList:       "127.0.0.1:6378",
+	Bucket:         "ao.lambda.code",
 	Requests:       15,
 	Clients:        1,
 	Pipeline:       1,
@@ -112,7 +118,7 @@ var DefaultOptions = &Options{
 func getRandomRange(min int, max int) int {
 	var rn int
 	rand.Seed(time.Now().UnixNano())
-	rn = rand.Intn(max - min + 1) + min
+	rn = rand.Intn(max-min+1) + min
 	return rn
 }
 
@@ -172,13 +178,19 @@ func Bench(
 
 		if opts.ClientLib == CLIENT_REDIS {
 			cli := redis.NewClient(&redis.Options{
-				Addr:     opts.AddrList,
-				Password: "", // no password set
-				DB:       0,  // use default DB
-				PoolSize: 1,  // use 1 connection per concurrency.
+				Addr:       opts.AddrList,
+				Password:   "", // no password set
+				DB:         0,  // use default DB
+				PoolSize:   1,  // use 1 connection per concurrency.
 				MaxRetries: 3,
 			})
 			defer cli.Close()
+			clis[i] = cli
+		} else if opts.ClientLib == CLIENT_S3 {
+			cli := customClient.NewS3Client(opts.Bucket)
+			clis[i] = cli
+		} else if opts.ClientLib == CLIENT_ELASTICACHE {
+			cli := customClient.NewRedisClient(opts.AddrList)
 			clis[i] = cli
 		} else {
 			addrArr := strings.Split(opts.AddrList, ",")
@@ -216,7 +228,7 @@ func Bench(
 					if i+n > crequests {
 						n = crequests - i
 					}
-					key := genKey(opts.Keymin, opts.Keymax, opts.Op, i * opts.Clients + cid)
+					key := genKey(opts.Keymin, opts.Keymax, opts.Op, i*opts.Clients+cid)
 					/*
 						buf = buf[:0]
 						for i := 0; i < n; i++ {
@@ -240,13 +252,31 @@ func Bench(
 								log.Println(err)
 							}
 						}
+					} else if opts.ClientLib == CLIENT_S3 {
+						if opts.Op == 0 {
+							cli.(*customClient.S3Client).EcSet(key, val)
+						} else {
+							_, reader, ok := cli.(*customClient.S3Client).EcGet(key, len(val))
+							if ok {
+								reader.Close() // By closing the reader, we save memory.
+							}
+						}
+					} else if opts.ClientLib == CLIENT_ELASTICACHE {
+						if opts.Op == 0 {
+							cli.(*customClient.RedisClient).EcSet(key, val)
+						} else {
+							_, reader, ok := cli.(*customClient.RedisClient).EcGet(key, len(val))
+							if ok {
+								reader.Close() // By closing the reader, we save memory.
+							}
+						}
 					} else {
 						if opts.Op == 0 {
 							cli.(*infinicache.Client).EcSet(key, val)
 						} else {
 							_, reader, ok := cli.(*infinicache.Client).EcGet(key, len(val))
 							if ok {
-								reader.Close()	// By closing the reader, we save memory.
+								reader.Close() // By closing the reader, we save memory.
 							}
 						}
 					}
@@ -381,6 +411,7 @@ func helpInfo() {
 	fmt.Println("Usage: ./bench [options]")
 	fmt.Println("Option list: ")
 	fmt.Println("  -addrlist [ADDR:PORT,...]: server address:port")
+	fmt.Println("  -bucket: S3 bucket name")
 	fmt.Println("  -n [NUMBER]: number of requests")
 	fmt.Println("  -c [NUMBER]: number of concurrent clients")
 	fmt.Println("  -pipeline [NUMBER]: number of pipelined requests")
@@ -396,7 +427,7 @@ func helpInfo() {
 	fmt.Println("  -file: print result to file")
 	fmt.Println("  -h: print out help info?")
 	fmt.Println("  -i: interval for every request (ms)")
-	fmt.Println("  -cli: client library used, try \"infinicache\" or \"redis\".")
+	fmt.Println("  -cli: client library used, try \"infinicache\" or \"redis\" or \"s3\" or \"elasticache\".")
 }
 
 func main() {
@@ -410,6 +441,7 @@ func main() {
 	options := DefaultOptions
 
 	flag.StringVar(&options.AddrList, "addrlist", "127.0.0.1:6378", "server address:port")
+	flag.StringVar(&options.Bucket, "bucket", "BUCKET_NAME", "S3 bucket name")
 	flag.IntVar(&options.Requests, "n", 10, "number of requests")
 	flag.IntVar(&options.Clients, "c", 1, "number of clients")
 	flag.IntVar(&options.Pipeline, "pipeline", 1, "number of pipelined requests")
@@ -424,7 +456,7 @@ func main() {
 	flag.BoolVar(&options.Printlog, "log", true, "print debugging log?")
 	flag.StringVar(&options.File, "file", "", "print result to file")
 	flag.Int64Var(&options.Interval, "i", 0, "interval for every req (ms)")
-	flag.StringVar(&options.ClientLib, "cli", CLIENT_INFINICACHE, "client lib, try \"redis\"")
+	flag.StringVar(&options.ClientLib, "cli", CLIENT_INFINICACHE, "client lib, try \"redis\", \"s3\", \"elasticache\"")
 
 	flag.Parse()
 
