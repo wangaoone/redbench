@@ -187,7 +187,7 @@ func Bench(
 				Password:   "", // no password set
 				DB:         0,  // use default DB
 				PoolSize:   1,  // use 1 connection per concurrency.
-				MaxRetries: 3,
+				MaxRetries: 0,
 			}))
 		case CLIENT_S3:
 			bucket := opts.ClientBase
