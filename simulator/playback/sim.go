@@ -91,7 +91,7 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 	log.Trace("find placement,%v,%v", p.Placements[obj.Key], obj.Key)
 
 	if placements, ok := p.Placements[obj.Key]; ok {
-		reqId, reader, success := cli.EcGet(obj.Key, int(obj.Sz), dryrun)
+		reqId, reader, success := cli.EcGet(obj.Key, dryrun)
 		if opts.Dryrun && opts.Balance {
 			success = p.Validate(obj)
 		}

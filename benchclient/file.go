@@ -1,11 +1,10 @@
 package benchclient
 
 import (
-	"bytes"
-	"io"
 	"io/ioutil"
 	"os"
 	"path"
+	infinicache "github.com/mason-leap-lab/infinicache/client"
 )
 
 type File struct {
@@ -35,7 +34,7 @@ func (c *File) set(key string, val []byte) (err error) {
 	return
 }
 
-func (c *File) get(key string, size int) (reader io.ReadCloser, err error) {
+func (c *File) get(key string) (reader infinicache.ReadAllCloser, err error) {
 	var file *os.File
 	if file, err = os.OpenFile(path.Join(c.basePath, key), os.O_RDONLY, 0); err != nil {
 		return
@@ -47,5 +46,5 @@ func (c *File) get(key string, size int) (reader io.ReadCloser, err error) {
 		return
 	}
 
-	return ioutil.NopCloser(bytes.NewReader(data)), nil
+	return NewByteReader(data), nil
 }

@@ -1,14 +1,8 @@
 package benchclient
 
 import (
-	"bytes"
-	"io"
-	"io/ioutil"
-	"time"
-
 	"github.com/go-redis/redis/v7"
-	"github.com/google/uuid"
-	"github.com/mason-leap-lab/infinicache/common/logger"
+	infinicache "github.com/mason-leap-lab/infinicache/client"
 )
 
 var (
@@ -57,8 +51,8 @@ var (
 )
 
 type Redis struct {
+	*defaultClient
 	backend redis.UniversalClient
-	log     logger.ILogger
 }
 
 func NewRedis(addr string) *Redis {
@@ -71,15 +65,13 @@ func NewRedis(addr string) *Redis {
 
 func NewRedisWithBackend(backend redis.UniversalClient) *Redis {
 	//client := newSession(addr)
-	return &Redis{
+	client := &Redis{
+		defaultClient: newDefaultClient("Redis: "),
 		backend: backend,
-		log: &logger.ColorLogger{
-			Verbose: true,
-			Level:   logger.LOG_LEVEL_ALL,
-			Color:   true,
-			Prefix:  "Redis: ",
-		},
 	}
+	client.setter = client.set
+	client.getter = client.get
+	return client
 }
 
 func NewElasticCache() *Redis {
@@ -89,51 +81,17 @@ func NewElasticCache() *Redis {
 	}))
 }
 
-func (r *Redis) EcSet(key string, val []byte, args ...interface{}) (string, bool) {
-	reqId := uuid.New().String()
-	// Debuging options
-	var dryrun int
-	var mark string
-	if len(args) > 0 {
-		dryrun, _ = args[0].(int)
-		mark, _ = args[2].(string)
-
-	}
-	if dryrun > 0 {
-		return reqId, true
-	}
-
-	// set to redis
-	start := time.Now()
-	err := r.backend.Set(key, val, 0).Err()
-	if err != nil {
-		r.log.Error("failed to SET file: %v", err)
-		return reqId, false
-	}
-	r.log.Info("%sSet %s %d", mark, key, int64(time.Since(start)))
-	return reqId, true
+func (r *Redis) set(key string, val []byte) (err error) {
+	return r.backend.Set(key, val, 0).Err()
 }
 
-func (r *Redis) EcGet(key string, size int, args ...interface{}) (string, io.ReadCloser, bool) {
-	reqId := uuid.New().String()
-	// Debuging options
-	var dryrun int
-	if len(args) > 0 {
-		dryrun, _ = args[0].(int)
-	}
-	if dryrun > 0 {
-		return reqId, nil, true
-	}
-
-	// GET from Redis
-	start := time.Now()
+func (r *Redis) get(key string) (infinicache.ReadAllCloser, error) {
 	val, err := r.backend.Get(key).Bytes()
 	if err != nil {
-		r.log.Error("failed to GET file: %v", err)
-		return reqId, nil, false
+		return nil, err
+	} else {
+		return NewByteReader(val), nil
 	}
-	r.log.Info("Get %s %d", key, int64(time.Since(start)))
-	return reqId, ioutil.NopCloser(bytes.NewReader(val)), true
 }
 
 func (r *Redis) Close() {

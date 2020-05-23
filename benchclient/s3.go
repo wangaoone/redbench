@@ -2,13 +2,12 @@ package benchclient
 
 import (
 	"bytes"
-	"io"
-	"io/ioutil"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	infinicache "github.com/mason-leap-lab/infinicache/client"
 )
 
 var (
@@ -48,13 +47,8 @@ func (c *S3) set(key string, val []byte) error {
 	return err
 }
 
-func (c *S3) get(key string, size int) (io.ReadCloser, error) {
-	var buff *aws.WriteAtBuffer
-	if size > 0 {
-		buff = aws.NewWriteAtBuffer(make([]byte, 0, size))
-	} else {
-		buff = new(aws.WriteAtBuffer)
-	}
+func (c *S3) get(key string) (infinicache.ReadAllCloser, error) {
+	buff := new(aws.WriteAtBuffer)
 	_, err := c.downloader.Download(buff, &s3.GetObjectInput{
 		Bucket: aws.String(c.bucket),
 		Key:    aws.String(key),
@@ -62,6 +56,6 @@ func (c *S3) get(key string, size int) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	} else {
-		return ioutil.NopCloser(bytes.NewReader(buff.Bytes())), nil
+		return NewByteReader(buff.Bytes()), nil
 	}
 }

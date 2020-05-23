@@ -251,7 +251,7 @@ func Bench(
 					if opts.Op == 0 {
 						cli.EcSet(key, val)
 					} else {
-						_, reader, ok := cli.EcGet(key, len(val))
+						_, reader, ok := cli.EcGet(key)
 						if ok {
 							reader.Close() // By closing the reader, we save memory.
 						}
