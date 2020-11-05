@@ -199,11 +199,14 @@ func initProxies(nProxies int, opts *Options) ([]*proxy.Proxy, *consistent.Consi
 	proxies := make([]*proxy.Proxy, nProxies)
 	members := []consistent.Member{}
 	for i, _ := range proxies {
-		// Balancer optiosn:
-		// proxy.LRUPlacer
-		// proxy.PriorityBalancer
-		// proxy.WeightedBalancer
-		proxies[i] = proxy.NewProxy(strconv.Itoa(i), opts.Cluster, &proxy.PriorityBalancer{})
+		var balancer proxy.ProxyBalancer
+		if opts.Balance {
+			// Balancer optiosn:
+			//balancer = &proxy.LRUPlacer{}
+			balancer = &proxy.PriorityBalancer{}
+			//balancer = &proxy.WeightedBalancer{}
+		}
+		proxies[i] = proxy.NewProxy(strconv.Itoa(i), opts.Cluster, balancer)
 
 		member := Member(proxies[i].Id)
 		members = append(members, member)
