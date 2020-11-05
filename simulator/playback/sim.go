@@ -13,6 +13,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/buraksezer/consistent"
@@ -37,6 +38,7 @@ var (
 		Level:   logger.LOG_LEVEL_ALL,
 		Color:   true,
 	}
+	mu sync.Mutex
 )
 
 func init() {
@@ -87,10 +89,11 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 	if opts.Dryrun {
 		dryrun = opts.Cluster
 	}
-	// log.Debug("Key:", obj.Key, "mapped to Proxy:", p.Id)
-	log.Trace("find placement,%v,%v", p.Placements[obj.Key], obj.Key)
 
-	if placements, ok := p.Placements[obj.Key]; ok {
+	// log.Debug("Key:", obj.Key, "mapped to Proxy:", p.Id)
+	if placements := p.Placements(obj.Key); placements != nil {
+		log.Trace("Found placements of %v: %v", obj.Key, placements)
+
 		reqId, reader, success := cli.EcGet(obj.Key, dryrun)
 		if opts.Dryrun && opts.Balance {
 			success = p.Validate(obj)
@@ -107,10 +110,11 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 				displaced := false
 				resetPlacements = p.Remap(resetPlacements, obj)
 				for i, idx := range resetPlacements {
+					p.ValidateLambda(idx)
 					chk := p.LambdaPool[placements[i]].Kvs[fmt.Sprintf("%d@%s", i, obj.Key)]
 					if chk == nil {
 						// Eviction tracked by simulator. Try find chunk from evicts.
-						chk = p.Evicts[fmt.Sprintf("%d@%s", i, obj.Key)]
+						chk = p.GetEvicted(fmt.Sprintf("%d@%s", i, obj.Key))
 
 						displaced = true
 						p.LambdaPool[idx].Kvs[chk.Key] = chk
@@ -125,10 +129,10 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 						p.LambdaPool[idx].MemUsed += chk.Sz
 					}
 					chk.Reset++
-					(&p.LambdaPool[idx]).Activate(obj.Time)
+					p.LambdaPool[idx].Activate(obj.Time)
 				}
 				if displaced {
-					p.Placements[obj.Key] = resetPlacements
+					p.SetPlacements(obj.Key, resetPlacements)
 				}
 			}
 			return "get", reqId
@@ -143,10 +147,12 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 				log.Error("Unexpected key %s not found in %d", chk.Key, idx)
 			}
 			chk.Freq++
-			(&p.LambdaPool[idx]).Activate(obj.Time)
+			p.LambdaPool[idx].Activate(obj.Time)
 		}
 		return "get", reqId
 	} else {
+		log.Trace("No placements found: %v", obj.Key)
+
 		// if key does not exist, generate the index array holding
 		// indexes of the destination lambdas
 		var val []byte
@@ -167,7 +173,7 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 		placements = p.Remap(placements, obj)
 		for i, idx := range placements {
 			chkKey := fmt.Sprintf("%d@%s", i, obj.Key)
-			chk := p.Evicts[chkKey]
+			chk := p.GetEvicted(chkKey)
 			if chk == nil {
 				chk = &proxy.Chunk{
 					Key:  chkKey,
@@ -175,39 +181,29 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 					Freq: 0,
 				}
 			}
+			p.ValidateLambda(idx)
 			p.LambdaPool[idx].Kvs[chk.Key] = chk
 			p.LambdaPool[idx].MemUsed += chk.Sz
 			if opts.Dryrun && opts.Balance {
 				p.Adapt(idx, chk)
 			}
-			(&p.LambdaPool[idx]).Activate(obj.Time)
+			p.LambdaPool[idx].Activate(obj.Time)
 		}
 		log.Trace("Set %s, placements: %v.", obj.Key, placements)
-		p.Placements[obj.Key] = placements
+		p.SetPlacements(obj.Key, placements)
 		return "set", reqId
 	}
 }
 
-func initProxies(nProxies int, opts *Options) ([]proxy.Proxy, *consistent.Consistent) {
-	proxies := make([]proxy.Proxy, nProxies)
+func initProxies(nProxies int, opts *Options) ([]*proxy.Proxy, *consistent.Consistent) {
+	proxies := make([]*proxy.Proxy, nProxies)
 	members := []consistent.Member{}
 	for i, _ := range proxies {
-		proxies[i].Id = strconv.Itoa(i)
-		proxies[i].LambdaPool = make([]proxy.Lambda, opts.Cluster)
-		proxies[i].Placements = make(map[string][]int)
-		for j, _ := range proxies[i].LambdaPool {
-			proxies[i].LambdaPool[j].Id = j
-			proxies[i].LambdaPool[j].Kvs = make(map[string]*proxy.Chunk)
-			proxies[i].LambdaPool[j].MemUsed = 100 * 1000000   // MB
-			proxies[i].LambdaPool[j].Capacity = 1024 * 1000000 // MB
-		}
-		proxies[i].Evicts = make(map[string]*proxy.Chunk)
-		if opts.Balance {
-			//proxies[i].Balancer = &proxy.LRUPlacer{}
-			proxies[i].Balancer = &proxy.PriorityBalancer{}
-			//proxies[i].Balancer = &proxy.WeightedBalancer{}
-			proxies[i].Init()
-		}
+		// Balancer optiosn:
+		// proxy.LRUPlacer
+		// proxy.PriorityBalancer
+		// proxy.WeightedBalancer
+		proxies[i] = proxy.NewProxy(strconv.Itoa(i), opts.Cluster, &proxy.PriorityBalancer{})
 
 		member := Member(proxies[i].Id)
 		members = append(members, member)
@@ -234,8 +230,7 @@ func main() {
 	var printInfo bool
 	flag.BoolVar(&printInfo, "h", false, "help info?")
 
-	options := &Options{
-	}
+	options := &Options{}
 	flag.StringVar(&options.AddrList, "addrlist", "127.0.0.1:6378", "proxy address:port")
 	flag.IntVar(&options.Cluster, "cluster", 300, "number of instance per proxy")
 	flag.IntVar(&options.Datashard, "d", 4, "number of data shards for RS erasure coding")
@@ -385,7 +380,7 @@ func main() {
 			member := ring.LocateKey([]byte(obj.Key))
 			hostId := member.String()
 			id, _ := strconv.Atoi(hostId)
-			_, reqId = perform(options, cli, &proxies[id], obj)
+			_, reqId = perform(options, cli, proxies[id], obj)
 			log.Debug("csv,%s,%s,%d,%d", reqId, obj.Key, int64(obj.Time.Sub(startObject.Time)), int64(skipedDuration+time.Since(start)))
 		}
 
@@ -404,9 +399,9 @@ func main() {
 	activated := 0
 	var balancerCost time.Duration
 	for i := 0; i < len(proxies); i++ {
-		prxy := &proxies[i]
+		prxy := proxies[i]
 		for j := 0; j < len(prxy.LambdaPool); j++ {
-			lambda := &prxy.LambdaPool[j]
+			lambda := prxy.LambdaPool[j]
 			totalMem += float64(lambda.MemUsed)
 			minMem = math.Min(minMem, float64(lambda.MemUsed))
 			maxMem = math.Max(maxMem, float64(lambda.MemUsed))
@@ -419,9 +414,9 @@ func main() {
 			}
 			activated += lambda.ActiveMinutes
 		}
-		for _, chk := range prxy.Evicts {
-			got += chk.Freq
-			reset += chk.Reset
+		for chk := range prxy.AllEvicts() {
+			got += chk.Value.(*proxy.Chunk).Freq
+			reset += chk.Value.(*proxy.Chunk).Reset
 		}
 		balancerCost += prxy.BalancerCost
 		prxy.Close()

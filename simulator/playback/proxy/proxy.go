@@ -1,7 +1,15 @@
 package proxy
 
 import (
+	"sync"
 	"time"
+
+	"github.com/cornelk/hashmap"
+)
+
+const (
+	LAMBDA_OVERHEAD = 100
+	LAMBDA_CAPACITY = 1536
 )
 
 type Chunk struct {
@@ -31,6 +39,15 @@ type Lambda struct {
 	blocks []int
 }
 
+func NewLambda(id int) *Lambda {
+	l := &Lambda{}
+	l.Id = id
+	l.Kvs = make(map[string]*Chunk)
+	l.MemUsed = LAMBDA_OVERHEAD * 1000000  // MB
+	l.Capacity = LAMBDA_CAPACITY * 1000000 // MB
+	return l
+}
+
 func (l *Lambda) Activate(recTime time.Time) {
 	if l.ActiveMinutes == 0 {
 		l.ActiveMinutes++
@@ -41,22 +58,54 @@ func (l *Lambda) Activate(recTime time.Time) {
 }
 
 type Proxy struct {
-	Id         string
-	LambdaPool []Lambda
-	Evicts     map[string]*Chunk
-	Placements map[string][]int
-	Balancer   ProxyBalancer
-
+	Id           string
+	LambdaPool   []*Lambda
+	Balancer     ProxyBalancer
 	BalancerCost time.Duration
+
+	evicts     *hashmap.HashMap // map[string]*Chunk
+	placements *hashmap.HashMap // map[string][]int
+	mu         sync.Mutex
 }
 
-func (p *Proxy) Init() {
-	if p.Balancer == nil {
+func NewProxy(id string, numCluster int, balancer ProxyBalancer) *Proxy {
+	proxy := &Proxy{
+		Id:         id,
+		LambdaPool: make([]*Lambda, numCluster),
+		Balancer:   balancer,
+		placements: hashmap.New(1024),
+		evicts:     hashmap.New(1024),
+	}
+	for i := 0; i < len(proxy.LambdaPool); i++ {
+		proxy.LambdaPool[i] = NewLambda(i)
+	}
+	if balancer != nil {
+		balancer.SetProxy(proxy)
+		balancer.Init()
+	}
+	return proxy
+}
+
+func (p *Proxy) ValidateLambda(lambdaId int) {
+	if lambdaId < len(p.LambdaPool) {
 		return
 	}
 
-	p.Balancer.SetProxy(p)
-	p.Balancer.Init()
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	lambdaPool := p.LambdaPool
+	if lambdaId >= cap(p.LambdaPool) {
+		lambdaPool = make([]*Lambda, cap(p.LambdaPool)*2)
+		copy(lambdaPool[:len(p.LambdaPool)], p.LambdaPool)
+	}
+	if lambdaId >= len(p.LambdaPool) {
+		lambdaPool = lambdaPool[:lambdaId+1]
+		for i := len(p.LambdaPool); i < len(lambdaPool); i++ {
+			lambdaPool[i] = NewLambda(i)
+		}
+		p.LambdaPool = lambdaPool
+	}
 }
 
 func (p *Proxy) Remap(placements []int, obj *Object) []int {
@@ -86,6 +135,39 @@ func (p *Proxy) Validate(obj *Object) bool {
 
 	p.Balancer.SetProxy(p)
 	return p.Balancer.Validate(obj)
+}
+
+func (p *Proxy) IsSet(key string) bool {
+	_, ok := p.placements.Get(key)
+	return ok
+}
+
+func (p *Proxy) Placements(key string) []int {
+	if v, ok := p.placements.Get(key); ok {
+		return v.([]int)
+	} else {
+		return nil
+	}
+}
+
+func (p *Proxy) SetPlacements(key string, placements []int) {
+	p.placements.Set(key, placements)
+}
+
+func (p *Proxy) Evict(key string, chunk *Chunk) {
+	p.evicts.Set(key, chunk)
+}
+
+func (p *Proxy) GetEvicted(key string) *Chunk {
+	if v, ok := p.evicts.Get(key); ok {
+		return v.(*Chunk)
+	} else {
+		return nil
+	}
+}
+
+func (p *Proxy) AllEvicts() <-chan hashmap.KeyValue {
+	return p.evicts.Iter()
 }
 
 func (p *Proxy) Close() {

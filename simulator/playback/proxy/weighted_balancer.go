@@ -42,7 +42,7 @@ func (b *WeightedBalancer) Remap(placements []int, _ *Object) []int {
 
 func (b *WeightedBalancer) Adapt(j int, _ *Chunk) {
 	// Remove a block from lambda, and allocated to nextLambda
-	l := &b.proxy.LambdaPool[j]
+	l := b.proxy.LambdaPool[j]
 	for int(math.Floor(float64(l.MemUsed)/float64(l.Capacity)*100)) > l.UsedPercentile {
 		//		syslog.Printf("Left blocks on lambda %d: %d", j, len(l.blocks))
 		if len(l.blocks) == 0 {
@@ -61,7 +61,7 @@ func (b *WeightedBalancer) Adapt(j int, _ *Chunk) {
 		l.blocks = l.blocks[1:]
 
 		// Add block to next lambda
-		nextL := &b.proxy.LambdaPool[b.nextLambda]
+		nextL := b.proxy.LambdaPool[b.nextLambda]
 		nextL.blocks = append(nextL.blocks, reallocIdx)
 
 		// Reset lambda at reallocIdx

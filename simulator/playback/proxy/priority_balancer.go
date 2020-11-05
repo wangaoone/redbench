@@ -53,7 +53,7 @@ func (b *PriorityBalancer) SetProxy(p *Proxy) {
 func (b *PriorityBalancer) Init() {
 	b.minority = make(PriorityQueue, len(b.proxy.LambdaPool))
 	for j := 0; j < len(b.proxy.LambdaPool); j++ {
-		b.minority[j] = &b.proxy.LambdaPool[j]
+		b.minority[j] = b.proxy.LambdaPool[j]
 		b.minority[j].block = j
 	}
 }
