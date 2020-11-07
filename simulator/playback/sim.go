@@ -39,7 +39,8 @@ var (
 		Level:   logger.LOG_LEVEL_ALL,
 		Color:   true,
 	}
-	mu sync.Mutex
+	mu      sync.Mutex
+	clients = &sync.Pool{}
 )
 
 func init() {
@@ -283,18 +284,21 @@ func main() {
 
 	addrArr := strings.Split(options.AddrList, ",")
 	proxies, ring := initProxies(len(addrArr), options)
-	var cli benchclient.Client
-	if options.S3 != "" {
-		cli = benchclient.NewS3(options.S3)
-	} else if options.Redis != "" {
-		cli = benchclient.NewRedis(options.Redis)
-	} else if options.RedisCluster == true {
-		cli = benchclient.NewElasticCache()
-	} else {
-		cli = client.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
-		if !options.Dryrun {
-			cli.(*client.Client).Dial(addrArr)
+	clients.New = func() interface{} {
+		var cli benchclient.Client
+		if options.S3 != "" {
+			cli = benchclient.NewS3(options.S3)
+		} else if options.Redis != "" {
+			cli = benchclient.NewRedis(options.Redis)
+		} else if options.RedisCluster == true {
+			cli = benchclient.NewElasticCache()
+		} else {
+			cli = client.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
+			if !options.Dryrun {
+				cli.(*client.Client).Dial(addrArr)
+			}
 		}
+		return cli
 	}
 
 	reader := csv.NewReader(bufio.NewReader(traceFile))
@@ -394,12 +398,17 @@ func main() {
 			for options.Concurrency > 0 && atomic.LoadInt32(&concurrency) >= int32(options.Concurrency) {
 				cond.Wait()
 			}
-			maxConcurrency = MaxInt32(maxConcurrency, atomic.AddInt32(&concurrency, 1))
+
+			c := atomic.AddInt32(&concurrency, 1)
+			maxConcurrency = MaxInt32(maxConcurrency, c)
+			log.Debug("Current concurrency: %d", c)
 
 			// Start perform
 			go func(p *proxy.Proxy, obj *proxy.Object, timeStartObject time.Time, start time.Time, skipped time.Duration) {
+				cli := clients.Get().(benchclient.Client)
 				_, reqId := perform(options, cli, p, obj)
 				log.Debug("csv,%s,%s,%d,%d", reqId, obj.Key, int64(obj.Time.Sub(timeStartObject)), int64(skipped+time.Since(start)))
+				clients.Put(cli)
 				atomic.AddInt32(&concurrency, -1)
 				cond.Signal()
 			}(proxies[id], obj, startObject.Time, start, skipedDuration)
