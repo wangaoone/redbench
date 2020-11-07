@@ -28,7 +28,7 @@ type Object struct {
 
 type Lambda struct {
 	Id             int
-	Kvs            map[string]*Chunk
+	Kvs            *hashmap.HashMap // map[string]*Chunk
 	MemUsed        uint64
 	ActiveMinutes  int
 	LastActive     time.Time
@@ -42,7 +42,7 @@ type Lambda struct {
 func NewLambda(id int) *Lambda {
 	l := &Lambda{}
 	l.Id = id
-	l.Kvs = make(map[string]*Chunk)
+	l.Kvs = hashmap.New(1024)
 	l.MemUsed = LAMBDA_OVERHEAD * 1000000  // MB
 	l.Capacity = LAMBDA_CAPACITY * 1000000 // MB
 	return l
@@ -55,6 +55,31 @@ func (l *Lambda) Activate(recTime time.Time) {
 		l.ActiveMinutes++
 	}
 	l.LastActive = recTime
+}
+
+func (l *Lambda) AddChunk(chunk *Chunk) {
+	l.Kvs.Set(chunk.Key, chunk)
+}
+
+func (l *Lambda) GetChunk(key string) (*Chunk, bool) {
+	chunk, ok := l.Kvs.Get(key)
+	if ok {
+		return chunk.(*Chunk), ok
+	} else {
+		return nil, ok
+	}
+}
+
+func (l *Lambda) DelChunk(key string) {
+	l.Kvs.Del(key)
+}
+
+func (l *Lambda) NumChunks() int {
+	return l.Kvs.Len()
+}
+
+func (l *Lambda) AllChunks() <-chan hashmap.KeyValue {
+	return l.Kvs.Iter()
 }
 
 type Proxy struct {

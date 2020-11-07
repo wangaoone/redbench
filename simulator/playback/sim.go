@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/buraksezer/consistent"
@@ -69,6 +70,7 @@ type Options struct {
 	Redis          string
 	RedisCluster   bool
 	Balance        bool
+	Concurrency    int
 }
 
 type Member string
@@ -111,21 +113,21 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 				resetPlacements = p.Remap(resetPlacements, obj)
 				for i, idx := range resetPlacements {
 					p.ValidateLambda(idx)
-					chk := p.LambdaPool[placements[i]].Kvs[fmt.Sprintf("%d@%s", i, obj.Key)]
+					chk, _ := p.LambdaPool[placements[i]].GetChunk(fmt.Sprintf("%d@%s", i, obj.Key))
 					if chk == nil {
 						// Eviction tracked by simulator. Try find chunk from evicts.
 						chk = p.GetEvicted(fmt.Sprintf("%d@%s", i, obj.Key))
 
 						displaced = true
-						p.LambdaPool[idx].Kvs[chk.Key] = chk
+						p.LambdaPool[idx].AddChunk(chk)
 						p.LambdaPool[idx].MemUsed += chk.Sz
 					} else if idx != placements[i] {
 						// Placement changed?
 						displaced = true
 						log.Warn("Placement changed on reset %s, %d -> %d", chk.Key, placements[i], idx)
 						p.LambdaPool[placements[i]].MemUsed -= chk.Sz
-						delete(p.LambdaPool[placements[i]].Kvs, chk.Key)
-						p.LambdaPool[idx].Kvs[chk.Key] = chk
+						p.LambdaPool[placements[i]].DelChunk(chk.Key)
+						p.LambdaPool[idx].AddChunk(chk)
 						p.LambdaPool[idx].MemUsed += chk.Sz
 					}
 					chk.Reset++
@@ -142,7 +144,7 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 		log.Trace("Get %s.", obj.Key)
 
 		for i, idx := range placements {
-			chk, ok := p.LambdaPool[idx].Kvs[fmt.Sprintf("%d@%s", i, obj.Key)]
+			chk, ok := p.LambdaPool[idx].GetChunk(fmt.Sprintf("%d@%s", i, obj.Key))
 			if !ok {
 				log.Error("Unexpected key %s not found in %d", chk.Key, idx)
 			}
@@ -182,7 +184,7 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 				}
 			}
 			p.ValidateLambda(idx)
-			p.LambdaPool[idx].Kvs[chk.Key] = chk
+			p.LambdaPool[idx].AddChunk(chk)
 			p.LambdaPool[idx].MemUsed += chk.Sz
 			if opts.Dryrun && opts.Balance {
 				p.Adapt(idx, chk)
@@ -254,6 +256,7 @@ func main() {
 	flag.StringVar(&options.Redis, "redis", "", "Redis for enable Redis simulation")
 	flag.BoolVar(&options.RedisCluster, "redisCluster", false, "redisCluster for enable Redis simulation")
 	flag.BoolVar(&options.Balance, "balance", false, "enable balancer on dryrun")
+	flag.IntVar(&options.Concurrency, "c", 0, "max concurrency allowed, default to be unlimited.")
 
 	flag.Parse()
 
@@ -309,6 +312,9 @@ func main() {
 	var skipedDuration time.Duration
 	var startObject *proxy.Object
 	var lastObject *proxy.Object
+	var concurrency int32
+	var maxConcurrency int32
+	cond := sync.NewCond(&sync.Mutex{})
 	for {
 		line, err := reader.Read()
 		if err == io.EOF {
@@ -376,15 +382,29 @@ func main() {
 			startObject = obj
 		}
 
-		var reqId string
 		if read >= options.Skip {
 			<-timer.C
 			log.Info("%d Playbacking %v(exp %v, act %v)...", read+1, obj.Key, obj.Time.Sub(startObject.Time), skipedDuration+time.Since(start))
 			member := ring.LocateKey([]byte(obj.Key))
 			hostId := member.String()
 			id, _ := strconv.Atoi(hostId)
-			_, reqId = perform(options, cli, proxies[id], obj)
-			log.Debug("csv,%s,%s,%d,%d", reqId, obj.Key, int64(obj.Time.Sub(startObject.Time)), int64(skipedDuration+time.Since(start)))
+
+			// Concurrency control
+			cond.L.Lock()
+			for options.Concurrency > 0 && atomic.LoadInt32(&concurrency) >= int32(options.Concurrency) {
+				cond.Wait()
+			}
+			maxConcurrency = MaxInt32(maxConcurrency, atomic.AddInt32(&concurrency, 1))
+
+			// Start perform
+			go func(p *proxy.Proxy, obj *proxy.Object, timeStartObject time.Time, start time.Time, skipped time.Duration) {
+				_, reqId := perform(options, cli, p, obj)
+				log.Debug("csv,%s,%s,%d,%d", reqId, obj.Key, int64(obj.Time.Sub(timeStartObject)), int64(skipped+time.Since(start)))
+				atomic.AddInt32(&concurrency, -1)
+				cond.Signal()
+			}(proxies[id], obj, startObject.Time, start, skipedDuration)
+
+			cond.L.Unlock()
 		}
 
 		lastObject = obj
@@ -408,12 +428,12 @@ func main() {
 			totalMem += float64(lambda.MemUsed)
 			minMem = math.Min(minMem, float64(lambda.MemUsed))
 			maxMem = math.Max(maxMem, float64(lambda.MemUsed))
-			minChunks = math.Min(minChunks, float64(len(lambda.Kvs)))
-			maxChunks = math.Max(maxChunks, float64(len(lambda.Kvs)))
-			set += len(lambda.Kvs)
-			for _, chk := range lambda.Kvs {
-				got += chk.Freq
-				reset += chk.Reset
+			minChunks = math.Min(minChunks, float64(lambda.NumChunks()))
+			maxChunks = math.Max(maxChunks, float64(lambda.NumChunks()))
+			set += lambda.NumChunks()
+			for chk := range lambda.AllChunks() {
+				got += chk.Value.(*proxy.Chunk).Freq
+				reset += chk.Value.(*proxy.Chunk).Reset
 			}
 			activated += lambda.ActiveMinutes
 		}
@@ -431,4 +451,13 @@ func main() {
 	syslog.Printf("Set %d, Got %d, Reset %d\n", set, got, reset)
 	syslog.Printf("Active Minutes %d\n", activated)
 	syslog.Printf("BalancerCost: %s(%s per request)", balancerCost, balancerCost/time.Duration(read-options.Skip))
+	syslog.Printf("Max concurrency: %d\n", maxConcurrency)
+}
+
+func MaxInt32(a int32, b int32) int32 {
+	if a < b {
+		return b
+	} else {
+		return a
+	}
 }
