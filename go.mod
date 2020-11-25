@@ -12,7 +12,6 @@ require (
 	github.com/buraksezer/consistent v0.0.0-20191006190839-693edf70fd72
 	github.com/cespare/xxhash v1.1.0
 	github.com/client9/misspell v0.3.4 // indirect
-	github.com/cornelk/hashmap v1.0.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-redis/redis v6.15.7+incompatible
 	github.com/go-redis/redis/v7 v7.2.0
@@ -30,6 +29,7 @@ require (
 	github.com/stripe/safesql v0.2.0 // indirect
 	github.com/tsenart/deadcode v0.0.0-20160724212837-210d2dc333e9 // indirect
 	github.com/walle/lll v1.0.1 // indirect
+	github.com/zhangjyr/hashmap v1.0.2
 	honnef.co/go/tools v0.0.1-2020.1.4 // indirect
 	mvdan.cc/interfacer v0.0.0-20180901003855-c20040233aed // indirect
 	mvdan.cc/lint v0.0.0-20170908181259-adc824a0674b // indirect

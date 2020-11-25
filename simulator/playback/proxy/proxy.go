@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cornelk/hashmap"
+	"github.com/zhangjyr/hashmap"
 )
 
 const (
