@@ -11,10 +11,12 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/buraksezer/consistent"
@@ -39,8 +41,9 @@ var (
 		Level:   logger.LOG_LEVEL_ALL,
 		Color:   true,
 	}
-	mu      sync.Mutex
-	clients = &sync.Pool{}
+	mu         sync.Mutex
+	clients    *proxy.Pool
+	numClients int32
 )
 
 func init() {
@@ -72,6 +75,7 @@ type Options struct {
 	RedisCluster   bool
 	Balance        bool
 	Concurrency    int
+	Bandwidth      int64
 }
 
 type Member string
@@ -91,6 +95,11 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 	dryrun := 0
 	if opts.Dryrun {
 		dryrun = opts.Cluster
+		if opts.Bandwidth > 0 {
+			timeToSleep := time.Duration(float64(obj.Sz)/float64(opts.Bandwidth)*float64(time.Second)) + 1*time.Millisecond
+			log.Debug("Sleep %v to simulate processing %s: ", timeToSleep, obj.Key)
+			time.Sleep(timeToSleep)
+		}
 	}
 
 	// log.Debug("Key:", obj.Key, "mapped to Proxy:", p.Id)
@@ -257,7 +266,8 @@ func main() {
 	flag.StringVar(&options.Redis, "redis", "", "Redis for enable Redis simulation")
 	flag.BoolVar(&options.RedisCluster, "redisCluster", false, "redisCluster for enable Redis simulation")
 	flag.BoolVar(&options.Balance, "balance", false, "enable balancer on dryrun")
-	flag.IntVar(&options.Concurrency, "c", 0, "max concurrency allowed, default to be unlimited.")
+	flag.IntVar(&options.Concurrency, "c", 100, "max concurrency allowed, minimum 1.")
+	flag.Int64Var(&options.Bandwidth, "w", 0, "unit bandwidth per shard in MiB/s. 0 for unlimited bandwidth")
 
 	flag.Parse()
 
@@ -274,6 +284,10 @@ func main() {
 		log.Verbose = false
 		log.Level = logger.LOG_LEVEL_WARN
 	}
+	if options.Concurrency <= 0 {
+		options.Concurrency = 1
+	}
+	options.Bandwidth *= 1024 * 1024 * int64(options.Datashard+options.Parityshard)
 
 	traceFile, err := os.Open(flag.Arg(0))
 	if err != nil {
@@ -284,22 +298,28 @@ func main() {
 
 	addrArr := strings.Split(options.AddrList, ",")
 	proxies, ring := initProxies(len(addrArr), options)
-	clients.New = func() interface{} {
-		var cli benchclient.Client
-		if options.S3 != "" {
-			cli = benchclient.NewS3(options.S3)
-		} else if options.Redis != "" {
-			cli = benchclient.NewRedis(options.Redis)
-		} else if options.RedisCluster == true {
-			cli = benchclient.NewElasticCache()
-		} else {
-			cli = client.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
-			if !options.Dryrun {
-				cli.(*client.Client).Dial(addrArr)
+	clients = proxy.InitPool(&proxy.Pool{
+		New: func() interface{} {
+			atomic.AddInt32(&numClients, 1)
+			var cli benchclient.Client
+			if options.S3 != "" {
+				cli = benchclient.NewS3(options.S3)
+			} else if options.Redis != "" {
+				cli = benchclient.NewRedis(options.Redis)
+			} else if options.RedisCluster == true {
+				cli = benchclient.NewElasticCache()
+			} else {
+				cli = client.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
+				if !options.Dryrun {
+					cli.(*client.Client).Dial(addrArr)
+				}
 			}
-		}
-		return cli
-	}
+			return cli
+		},
+		Finalize: func(c interface{}) {
+			c.(benchclient.Client).Close()
+		},
+	}, options.Concurrency, proxy.PoolForStrictConcurrency)
 
 	reader := csv.NewReader(bufio.NewReader(traceFile))
 	// Skip first line
@@ -311,15 +331,28 @@ func main() {
 	}
 
 	timer := time.NewTimer(0)
+	timerCanceller := make(chan time.Time, 1)
 	start := time.Now()
 	read := int64(0)
-	var skipedDuration time.Duration
+	var skippedDuration time.Duration
 	var startObject *proxy.Object
 	var lastObject *proxy.Object
 	var concurrency int32
 	var maxConcurrency int32
-	cond := sync.NewCond(&sync.Mutex{})
+	// cond := sync.NewCond(&sync.Mutex{})
+	var close bool
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT, syscall.SIGABRT)
+	go func() {
+		<-sig
+		log.Info("Receive signal, stop server...")
+		close = true
+	}()
 	for {
+		if close {
+			break
+		}
+
 		line, err := reader.Read()
 		if err == io.EOF {
 			break
@@ -349,6 +382,8 @@ func main() {
 		}
 		obj.ChunkSz = obj.Sz / uint64(options.Datashard)
 
+		var timeout time.Duration
+		planned := time.Now()
 		if lastObject != nil {
 			if !timer.Stop() {
 				select {
@@ -356,17 +391,22 @@ func main() {
 				default:
 				}
 			}
-			timeout := time.Duration(options.Interval) * time.Millisecond
-			if options.Compact {
-				next := obj.Time.Sub(lastObject.Time)
-				if next < timeout {
-					timeout = next
-				}
-			} else {
-				// Use absolute time span for accuracy
-				timeout = obj.Time.Sub(startObject.Time) - skipedDuration - time.Since(start)
-			}
-			if timeout <= 0 || (options.Dryrun && options.Compact) {
+			// timeout := time.Duration(options.Interval) * time.Millisecond
+			// if options.Compact {
+			// 	next := obj.Time.Sub(lastObject.Time)
+			// 	if next < timeout {
+			// 		timeout = next
+			// 	}
+			// } else {
+			// 	// Use absolute time span for accuracy
+			// 	timeout = obj.Time.Sub(startObject.Time) - skippedDuration - time.Since(start)
+			// }
+			// if timeout <= 0 || (options.Dryrun && options.Compact) {
+			// 	timeout = 0
+			// }
+			// Use absolute time span for accuracy
+			timeout = obj.Time.Sub(startObject.Time) - skippedDuration - planned.Sub(start)
+			if timeout <= 0 {
 				timeout = 0
 			}
 
@@ -374,10 +414,11 @@ func main() {
 			if read >= options.Skip {
 				if timeout > 0 {
 					log.Info("Playback %d in %v", read+1, timeout)
+					timer.Reset(timeout)
+					planned = planned.Add(timeout)
 				}
-				timer.Reset(timeout)
 			} else {
-				skipedDuration += timeout
+				skippedDuration += timeout
 				if timeout > 0 {
 					log.Info("Skip %d: %v", read+1, timeout)
 				}
@@ -387,33 +428,55 @@ func main() {
 		}
 
 		if read >= options.Skip {
-			<-timer.C
-			log.Info("%d Playbacking %v(exp %v, act %v)...", read+1, obj.Key, obj.Time.Sub(startObject.Time), skipedDuration+time.Since(start))
+			now := planned
+			if timeout > 0 {
+				select {
+				case cancelledAt := <-timerCanceller:
+					skipped := now.Sub(cancelledAt)
+					if skipped < 0 {
+						skipped = 0
+					}
+					skippedDuration += skipped
+					now = cancelledAt
+					log.Info("Skipped %v in compact mode", skipped)
+					// No need to stop timer. It is stopped on processing each object.
+				case now = <-timer.C:
+					// Do nothing
+				}
+			}
+
 			member := ring.LocateKey([]byte(obj.Key))
 			hostId := member.String()
 			id, _ := strconv.Atoi(hostId)
 
 			// Concurrency control
-			cond.L.Lock()
-			for options.Concurrency > 0 && atomic.LoadInt32(&concurrency) >= int32(options.Concurrency) {
-				cond.Wait()
-			}
+			// cond.L.Lock()
+			// for options.Concurrency > 0 && atomic.LoadInt32(&concurrency) >= int32(options.Concurrency) {
+			// 	cond.Wait()
+			// }
 
-			c := atomic.AddInt32(&concurrency, 1)
-			maxConcurrency = MaxInt32(maxConcurrency, c)
-			log.Debug("Current concurrency: %d", c)
+			cli := clients.Get().(benchclient.Client)
 
 			// Start perform
-			go func(p *proxy.Proxy, obj *proxy.Object, timeStartObject time.Time, start time.Time, skipped time.Duration) {
-				cli := clients.Get().(benchclient.Client)
-				_, reqId := perform(options, cli, p, obj)
-				log.Debug("csv,%s,%s,%d,%d", reqId, obj.Key, int64(obj.Time.Sub(timeStartObject)), int64(skipped+time.Since(start)))
-				clients.Put(cli)
-				atomic.AddInt32(&concurrency, -1)
-				cond.Signal()
-			}(proxies[id], obj, startObject.Time, start, skipedDuration)
+			go func(sn int64, cli benchclient.Client, p *proxy.Proxy, obj *proxy.Object, expected time.Duration, scheduled time.Duration) {
+				c := atomic.AddInt32(&concurrency, 1)
+				max := maxConcurrency
+				atomic.CompareAndSwapInt32(&maxConcurrency, max, MaxInt32(maxConcurrency, c))
 
-			cond.L.Unlock()
+				actural := skippedDuration + time.Since(start)
+				log.Info("%d(c:%d) Playbacking %v %s (expc %v, schd %v, actc %v)...", sn, c, obj.Key, humanize.Bytes(uint64(obj.Sz)), expected, scheduled, actural)
+
+				_, reqId := perform(options, cli, p, obj)
+
+				if atomic.AddInt32(&concurrency, -1) == 0 && options.Compact {
+					timerCanceller <- time.Now()
+				}
+				clients.Put(cli)
+				log.Debug("csv,%s,%s,%d,%d,%d", reqId, obj.Key, expected, actural, obj.Sz)
+				// cond.Signal()
+			}(read+1, cli, proxies[id], obj, obj.Time.Sub(startObject.Time), skippedDuration+now.Sub(start))
+
+			// cond.L.Unlock()
 		}
 
 		lastObject = obj
@@ -460,7 +523,9 @@ func main() {
 	syslog.Printf("Set %d, Got %d, Reset %d\n", set, got, reset)
 	syslog.Printf("Active Minutes %d\n", activated)
 	syslog.Printf("BalancerCost: %s(%s per request)", balancerCost, balancerCost/time.Duration(read-options.Skip))
-	syslog.Printf("Max concurrency: %d\n", maxConcurrency)
+	syslog.Printf("Max concurrency: %d, clients initialized: %d\n", maxConcurrency, atomic.LoadInt32(&numClients))
+
+	clients.Close()
 }
 
 func MaxInt32(a int32, b int32) int32 {

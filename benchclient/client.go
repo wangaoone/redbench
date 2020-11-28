@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/mason-leap-lab/infinicache/common/logger"
 	infinicache "github.com/mason-leap-lab/infinicache/client"
+	"github.com/mason-leap-lab/infinicache/common/logger"
 )
 
 type Client interface {
@@ -18,9 +18,9 @@ type clientSetter func(string, []byte) error
 type clientGetter func(string) (infinicache.ReadAllCloser, error)
 
 type defaultClient struct {
-	log     logger.ILogger
-	setter  clientSetter
-	getter  clientGetter
+	log    logger.ILogger
+	setter clientSetter
+	getter clientGetter
 }
 
 func newDefaultClient(logPrefix string) *defaultClient {
@@ -83,7 +83,7 @@ func (c *defaultClient) EcGet(key string, args ...interface{}) (string, infinica
 
 	// Timing
 	start := time.Now()
-	reader, err := c.getter(key);
+	reader, err := c.getter(key)
 	if err != nil {
 		c.log.Error("failed to download: %v", err)
 		return reqId, nil, false
