@@ -19,6 +19,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ScottMansfield/nanolog"
 	"github.com/buraksezer/consistent"
 	"github.com/cespare/xxhash"
 	"github.com/dustin/go-humanize"
@@ -253,7 +254,7 @@ func main() {
 	flag.IntVar(&options.ECmaxgoroutine, "g", 32, "max number of goroutines for RS erasure coding")
 	flag.BoolVar(&options.NoDebug, "disable-debug", false, "disable printing debugging log?")
 	flag.BoolVar(&options.SummaryOnly, "summary-only", false, "show summary only")
-	flag.StringVar(&options.File, "file", "playback", "print result to file")
+	flag.StringVar(&options.File, "file", "", "print result to file")
 	flag.BoolVar(&options.Compact, "compact", false, "playback in compact mode")
 	flag.Int64Var(&options.Interval, "i", 2000, "interval for every req (ms), valid only if compact=true")
 	flag.BoolVar(&options.Dryrun, "dryrun", false, "no actual invocation")
@@ -283,6 +284,12 @@ func main() {
 	if options.SummaryOnly {
 		log.Verbose = false
 		log.Level = logger.LOG_LEVEL_WARN
+	}
+	if options.File != "" {
+		if err := logCreate(options); err != nil {
+			panic(err)
+		}
+		defer nanolog.Flush()
 	}
 	if options.Concurrency <= 0 {
 		options.Concurrency = 1
@@ -459,6 +466,13 @@ func main() {
 
 			// Start perform
 			go func(sn int64, cli benchclient.Client, p *proxy.Proxy, obj *proxy.Object, expected time.Duration, scheduled time.Duration) {
+				defer func() {
+					if err := recover(); err != nil {
+						log.Error("Abort due to fatal err: %v", err)
+						close = true
+					}
+				}()
+
 				c := atomic.AddInt32(&concurrency, 1)
 				max := maxConcurrency
 				atomic.CompareAndSwapInt32(&maxConcurrency, max, MaxInt32(maxConcurrency, c))
@@ -526,6 +540,22 @@ func main() {
 	syslog.Printf("Max concurrency: %d, clients initialized: %d\n", maxConcurrency, atomic.LoadInt32(&numClients))
 
 	clients.Close()
+}
+
+//logCreate create the nanoLog
+func logCreate(opts *Options) error {
+	// Set up nanoLog writer
+	path := opts.File + "_playback.clog"
+	nanoLogout, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	err = nanolog.SetWriter(nanoLogout)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func MaxInt32(a int32, b int32) int32 {
