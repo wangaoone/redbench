@@ -79,6 +79,12 @@ type Options struct {
 	Bandwidth      int64
 }
 
+type FinalizeOptions struct {
+	once         sync.Once
+	closeNanolog bool
+	traceFile    *os.File
+}
+
 type Member string
 
 func (m Member) String() string {
@@ -246,6 +252,9 @@ func main() {
 	var printInfo bool
 	flag.BoolVar(&printInfo, "h", false, "help info?")
 
+	finalizeOptions := &FinalizeOptions{}
+	defer finalize(finalizeOptions)
+
 	options := &Options{}
 	flag.StringVar(&options.AddrList, "addrlist", "127.0.0.1:6378", "proxy address:port")
 	flag.IntVar(&options.Cluster, "cluster", 300, "number of instance per proxy")
@@ -289,7 +298,7 @@ func main() {
 		if err := logCreate(options); err != nil {
 			panic(err)
 		}
-		defer nanolog.Flush()
+		finalizeOptions.closeNanolog = true
 	}
 	if options.Concurrency <= 0 {
 		options.Concurrency = 1
@@ -301,7 +310,7 @@ func main() {
 		log.Error("Failed to open trace file: %s", flag.Arg(0))
 		os.Exit(1)
 	}
-	defer traceFile.Close()
+	finalizeOptions.traceFile = traceFile
 
 	addrArr := strings.Split(options.AddrList, ",")
 	proxies, ring := initProxies(len(addrArr), options)
@@ -467,10 +476,11 @@ func main() {
 			// Start perform
 			go func(sn int64, cli benchclient.Client, p *proxy.Proxy, obj *proxy.Object, expected time.Duration, scheduled time.Duration) {
 				defer func() {
-					if err := recover(); err != nil {
-						log.Error("Abort due to fatal err: %v", err)
-						close = true
-					}
+					finalize(finalizeOptions)
+					// if err := recover(); err != nil {
+					// 	log.Error("Abort due to fatal err: %v", err)
+					// 	close = true
+					// }
 				}()
 
 				c := atomic.AddInt32(&concurrency, 1)
@@ -542,6 +552,20 @@ func main() {
 	clients.Close()
 }
 
+func finalize(opts *FinalizeOptions) {
+	opts.once.Do(func() {
+		if opts.closeNanolog {
+			nanolog.Flush()
+			opts.closeNanolog = false
+		}
+
+		if opts.traceFile != nil {
+			opts.traceFile.Close()
+			opts.traceFile = nil
+		}
+	})
+}
+
 //logCreate create the nanoLog
 func logCreate(opts *Options) error {
 	// Set up nanoLog writer
@@ -554,6 +578,8 @@ func logCreate(opts *Options) error {
 	if err != nil {
 		return err
 	}
+
+	client.SetLogger(nanolog.Log)
 
 	return nil
 }
