@@ -475,13 +475,13 @@ func main() {
 
 			// Start perform
 			go func(sn int64, cli benchclient.Client, p *proxy.Proxy, obj *proxy.Object, expected time.Duration, scheduled time.Duration) {
-				defer func() {
-					finalize(finalizeOptions)
-					// if err := recover(); err != nil {
-					// 	log.Error("Abort due to fatal err: %v", err)
-					// 	close = true
-					// }
-				}()
+				// defer func() {
+				// 	finalize(finalizeOptions)
+				// 	// if err := recover(); err != nil {
+				// 	// 	log.Error("Abort due to fatal err: %v", err)
+				// 	// 	close = true
+				// 	// }
+				// }()
 
 				c := atomic.AddInt32(&concurrency, 1)
 				max := maxConcurrency
