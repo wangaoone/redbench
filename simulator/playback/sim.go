@@ -485,7 +485,9 @@ func main() {
 
 				c := atomic.AddInt32(&concurrency, 1)
 				max := maxConcurrency
-				atomic.CompareAndSwapInt32(&maxConcurrency, max, MaxInt32(maxConcurrency, c))
+				for !atomic.CompareAndSwapInt32(&maxConcurrency, max, MaxInt32(max, c)) {
+					max = maxConcurrency
+				}
 
 				actural := skippedDuration + time.Since(start)
 				log.Info("%d(c:%d) Playbacking %v %s (expc %v, schd %v, actc %v)...", sn, c, obj.Key, humanize.Bytes(uint64(obj.Sz)), expected, scheduled, actural)
