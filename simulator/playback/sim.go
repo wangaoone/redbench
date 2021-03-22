@@ -1,9 +1,27 @@
+/*
+Copyright (c) 2020 LeapLab @ CS_GMU
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
 package main
 
 import (
-	"bufio"
-	"encoding/csv"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -29,6 +47,7 @@ import (
 	"github.com/wangaoone/redbench/benchclient"
 
 	"github.com/wangaoone/redbench/simulator/playback/proxy"
+	"github.com/wangaoone/redbench/simulator/readers"
 )
 
 const (
@@ -42,7 +61,6 @@ var (
 		Level:   logger.LOG_LEVEL_ALL,
 		Color:   true,
 	}
-	mu         sync.Mutex
 	clients    *proxy.Pool
 	numClients int32
 )
@@ -103,7 +121,7 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 	if opts.Dryrun {
 		dryrun = opts.Cluster
 		if opts.Bandwidth > 0 {
-			timeToSleep := time.Duration(float64(obj.Sz)/float64(opts.Bandwidth)*float64(time.Second)) + 1*time.Millisecond
+			timeToSleep := time.Duration(float64(obj.Size)/float64(opts.Bandwidth)*float64(time.Second)) + 1*time.Millisecond
 			log.Debug("Sleep %v to simulate processing %s: ", timeToSleep, obj.Key)
 			time.Sleep(timeToSleep)
 		}
@@ -119,7 +137,7 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 		}
 
 		if !success {
-			val := make([]byte, obj.Sz)
+			val := make([]byte, obj.Size)
 			rand.Read(val)
 			resetPlacements := make([]int, opts.Datashard+opts.Parityshard)
 			_, reset := cli.EcSet(obj.Key, val, dryrun, resetPlacements, "Reset")
@@ -148,7 +166,7 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 						p.LambdaPool[idx].MemUsed += chk.Sz
 					}
 					chk.Reset++
-					p.LambdaPool[idx].Activate(obj.Time)
+					p.LambdaPool[idx].Activate(obj.Timestamp)
 				}
 				if displaced {
 					p.SetPlacements(obj.Key, resetPlacements)
@@ -166,7 +184,7 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 				log.Error("Unexpected key %s not found in %d", chk.Key, idx)
 			}
 			chk.Freq++
-			p.LambdaPool[idx].Activate(obj.Time)
+			p.LambdaPool[idx].Activate(obj.Timestamp)
 		}
 		return "get", reqId
 	} else {
@@ -176,7 +194,7 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 		// indexes of the destination lambdas
 		var val []byte
 		if !opts.Lean {
-			val = make([]byte, obj.Sz)
+			val = make([]byte, obj.Size)
 			rand.Read(val)
 		}
 		placements := make([]int, opts.Datashard+opts.Parityshard)
@@ -206,7 +224,7 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 			if opts.Dryrun && opts.Balance {
 				p.Adapt(idx, chk)
 			}
-			p.LambdaPool[idx].Activate(obj.Time)
+			p.LambdaPool[idx].Activate(obj.Timestamp)
 		}
 		log.Trace("Set %s, placements: %v.", obj.Key, placements)
 		p.SetPlacements(obj.Key, placements)
@@ -217,7 +235,7 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 func initProxies(nProxies int, opts *Options) ([]*proxy.Proxy, *consistent.Consistent) {
 	proxies := make([]*proxy.Proxy, nProxies)
 	members := []consistent.Member{}
-	for i, _ := range proxies {
+	for i := range proxies {
 		var balancer proxy.ProxyBalancer
 		if opts.Balance {
 			// Balancer optiosn:
@@ -322,7 +340,7 @@ func main() {
 				cli = benchclient.NewS3(options.S3)
 			} else if options.Redis != "" {
 				cli = benchclient.NewRedis(options.Redis)
-			} else if options.RedisCluster == true {
+			} else if options.RedisCluster {
 				cli = benchclient.NewElasticCache()
 			} else {
 				cli = client.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
@@ -337,15 +355,7 @@ func main() {
 		},
 	}, options.Concurrency, proxy.PoolForStrictConcurrency)
 
-	reader := csv.NewReader(bufio.NewReader(traceFile))
-	// Skip first line
-	_, err = reader.Read()
-	if err == io.EOF {
-		panic(errors.New(fmt.Sprintf("Empty file: %s", flag.Arg(0))))
-	} else if err != nil {
-		panic(err)
-	}
-
+	reader := readers.NewIBMDockerRegistryReader(traceFile)
 	timer := time.NewTimer(0)
 	timerCanceller := make(chan time.Time, 1)
 	start := time.Now()
@@ -369,34 +379,24 @@ func main() {
 			break
 		}
 
-		line, err := reader.Read()
+		rec, err := reader.Read()
 		if err == io.EOF {
 			break
 		} else if err != nil {
 			panic(err)
-		}
-
-		sz, szErr := strconv.ParseFloat(line[9], 64)
-		t, tErr := time.Parse(TIME_PATTERN, line[11][:len(TIME_PATTERN)])
-		if tErr != nil {
-			t, tErr = time.Parse(TIME_PATTERN2, line[11][:len(TIME_PATTERN2)])
-		}
-		if szErr != nil || tErr != nil {
-			log.Warn("Error on parse record, skip %v: %v, %v", line, szErr, tErr)
+		} else if rec.Error != nil {
+			log.Warn("%v", rec.Error)
 			continue
 		}
-		obj := &proxy.Object{
-			Key:  line[6],
-			Sz:   uint64(sz),
-			Time: t,
+
+		obj := &proxy.Object{Record: rec}
+		if obj.Size > options.MaxSz {
+			obj.Size = options.MaxSz
 		}
-		if obj.Sz > options.MaxSz {
-			obj.Sz = options.MaxSz
+		if obj.Size > options.ScaleFrom {
+			obj.Size = uint64(float64(obj.Size) * options.ScaleSz)
 		}
-		if obj.Sz > options.ScaleFrom {
-			obj.Sz = uint64(float64(obj.Sz) * options.ScaleSz)
-		}
-		obj.ChunkSz = obj.Sz / uint64(options.Datashard)
+		obj.ChunkSz = obj.Size / uint64(options.Datashard)
 
 		var timeout time.Duration
 		planned := time.Now()
@@ -421,7 +421,7 @@ func main() {
 			// 	timeout = 0
 			// }
 			// Use absolute time span for accuracy
-			timeout = obj.Time.Sub(startObject.Time) - skippedDuration - planned.Sub(start)
+			timeout = time.Duration(obj.Timestamp-startObject.Timestamp) - skippedDuration - planned.Sub(start)
 			if timeout <= 0 {
 				timeout = 0
 			}
@@ -490,17 +490,20 @@ func main() {
 				}
 
 				actural := skippedDuration + time.Since(start)
-				log.Info("%d(c:%d) Playbacking %v %s (expc %v, schd %v, actc %v)...", sn, c, obj.Key, humanize.Bytes(uint64(obj.Sz)), expected, scheduled, actural)
+				log.Info("%d(c:%d) Playbacking %v %s (expc %v, schd %v, actc %v)...", sn, c, obj.Key, humanize.Bytes(obj.Size), expected, scheduled, actural)
 
 				_, reqId := perform(options, cli, p, obj)
 
 				if atomic.AddInt32(&concurrency, -1) == 0 && options.Compact {
-					timerCanceller <- time.Now()
+					select {
+					case timerCanceller <- time.Now():
+					default:
+					}
 				}
 				clients.Put(cli)
-				log.Debug("csv,%s,%s,%d,%d,%d", reqId, obj.Key, expected, actural, obj.Sz)
+				log.Debug("csv,%s,%s,%d,%d,%d", reqId, obj.Key, expected, actural, obj.Size)
 				// cond.Signal()
-			}(read+1, cli, proxies[id], obj, obj.Time.Sub(startObject.Time), skippedDuration+now.Sub(start))
+			}(read+1, cli, proxies[id], obj, time.Duration(obj.Timestamp-startObject.Timestamp), skippedDuration+now.Sub(start))
 
 			// cond.L.Unlock()
 		}

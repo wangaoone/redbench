@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/wangaoone/redbench/simulator/readers"
 	"github.com/zhangjyr/hashmap"
 )
 
@@ -20,10 +21,8 @@ type Chunk struct {
 }
 
 type Object struct {
-	Key     string
-	Sz      uint64
+	*readers.Record
 	ChunkSz uint64
-	Time    time.Time
 }
 
 type Lambda struct {
@@ -31,7 +30,7 @@ type Lambda struct {
 	Kvs            *hashmap.HashMap // map[string]*Chunk
 	MemUsed        uint64
 	ActiveMinutes  int
-	LastActive     time.Time
+	LastActive     int64
 	Capacity       uint64
 	UsedPercentile int
 
@@ -48,10 +47,10 @@ func NewLambda(id int) *Lambda {
 	return l
 }
 
-func (l *Lambda) Activate(recTime time.Time) {
+func (l *Lambda) Activate(recTime int64) {
 	if l.ActiveMinutes == 0 {
 		l.ActiveMinutes++
-	} else if recTime.Sub(l.LastActive) >= time.Minute {
+	} else if time.Duration(recTime-l.LastActive) >= time.Minute {
 		l.ActiveMinutes++
 	}
 	l.LastActive = recTime

@@ -1,14 +1,14 @@
 module github.com/wangaoone/redbench
 
-go 1.12
+go 1.15
+
+replace github.com/mason-leap-lab/infinicache => /Users/Tianium/Studio/go/src/github.com/mason-leap-lab/infinicache
 
 require (
-	4d63.com/gochecknoglobals v0.0.0-20190306162314-7c3491d2b6ec // indirect
-	4d63.com/gochecknoinits v0.0.0-20200108094044-eb73b47b9fc4 // indirect
 	github.com/ScottMansfield/nanolog v0.2.0
 	github.com/alecthomas/gocyclo v0.0.0-20150208221726-aa8f8b160214 // indirect
 	github.com/alexkohler/nakedret v1.0.0 // indirect
-	github.com/aws/aws-sdk-go v1.28.10
+	github.com/aws/aws-sdk-go v1.31.0
 	github.com/buraksezer/consistent v0.0.0-20191006190839-693edf70fd72
 	github.com/cespare/xxhash v1.1.0
 	github.com/client9/misspell v0.3.4 // indirect
