@@ -27,9 +27,7 @@ func (reader *IBMDockerRegistryReader) Read() (*Record, error) {
 	if reader.cursor == 0 {
 		// Skip first line
 		_, err := reader.backend.Read()
-		if err == io.EOF {
-			return nil, ErrNoData
-		} else if err != nil {
+		if err != nil {
 			return nil, err
 		}
 
@@ -58,7 +56,11 @@ func (reader *IBMDockerRegistryReader) Read() (*Record, error) {
 	}
 
 	if szErr != nil || tErr != nil {
-		rec.Error = fmt.Errorf("Error on parse record, skip line %d: %v(%v, %v)", reader.cursor, line, szErr, tErr)
+		rec.Error = fmt.Errorf("error on parse record, skip line %d: %v(%v, %v)", reader.cursor, line, szErr, tErr)
 	}
 	return rec, nil
+}
+
+func (reader *IBMDockerRegistryReader) Report() []string {
+	return nil
 }

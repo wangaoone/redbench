@@ -19,11 +19,11 @@ type Record struct {
 	// Size Object size
 	Size uint64
 
-	// Offset Fragment offset if supported
-	Offset uint64
+	// Start Start position of fragment object if supported
+	Start uint64
 
-	// Length Fragment length if supported
-	Length uint64
+	// End End position of fragment object if supported
+	End uint64
 
 	// TTL Lifetime of object
 	TTL int64
@@ -33,5 +33,6 @@ type Record struct {
 }
 
 type RecordReader interface {
-	Read() *Record
+	Read() (*Record, error)
+	Report() []string
 }

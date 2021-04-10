@@ -82,7 +82,6 @@ type Options struct {
 	SummaryOnly    bool
 	File           string
 	Compact        bool
-	Interval       int64
 	Dryrun         bool
 	Lean           bool
 	MaxSz          uint64
@@ -95,6 +94,7 @@ type Options struct {
 	Balance        bool
 	Concurrency    int
 	Bandwidth      int64
+	TraceName      string
 }
 
 type FinalizeOptions struct {
@@ -276,16 +276,15 @@ func main() {
 	options := &Options{}
 	flag.StringVar(&options.AddrList, "addrlist", "127.0.0.1:6378", "proxy address:port")
 	flag.IntVar(&options.Cluster, "cluster", 300, "number of instance per proxy")
-	flag.IntVar(&options.Datashard, "d", 4, "number of data shards for RS erasure coding")
+	flag.IntVar(&options.Datashard, "d", 10, "number of data shards for RS erasure coding")
 	flag.IntVar(&options.Parityshard, "p", 2, "number of parity shards for RS erasure coding")
 	flag.IntVar(&options.ECmaxgoroutine, "g", 32, "max number of goroutines for RS erasure coding")
 	flag.BoolVar(&options.NoDebug, "disable-debug", false, "disable printing debugging log?")
 	flag.BoolVar(&options.SummaryOnly, "summary-only", false, "show summary only")
 	flag.StringVar(&options.File, "file", "", "print result to file")
-	flag.BoolVar(&options.Compact, "compact", false, "playback in compact mode")
-	flag.Int64Var(&options.Interval, "i", 2000, "interval for every req (ms), valid only if compact=true")
-	flag.BoolVar(&options.Dryrun, "dryrun", false, "no actual invocation")
-	flag.BoolVar(&options.Lean, "lean", false, "run with minimum memory consumtion, valid only if dryrun=true")
+	flag.BoolVar(&options.Dryrun, "dryrun", false, "no actual invocation, with -lean and -compact set to true by default.")
+	// flag.BoolVar(&options.Lean, "lean", false, "run with minimum memory consumtion, valid only if dryrun=true")
+	// flag.BoolVar(&options.Compact, "compact", false, "playback in compact mode")
 	flag.Uint64Var(&options.MaxSz, "maxsz", 2147483648, "max object size")
 	flag.Uint64Var(&options.ScaleFrom, "scalefrom", 104857600, "objects larger than this size will be scaled")
 	flag.Float64Var(&options.ScaleSz, "scalesz", 1, "scale object size")
@@ -296,6 +295,17 @@ func main() {
 	flag.BoolVar(&options.Balance, "balance", false, "enable balancer on dryrun")
 	flag.IntVar(&options.Concurrency, "c", 100, "max concurrency allowed, minimum 1.")
 	flag.Int64Var(&options.Bandwidth, "w", 0, "unit bandwidth per shard in MiB/s. 0 for unlimited bandwidth")
+	flag.StringVar(&options.TraceName, "trace", "IBMDockerRegistry", "type of trace: IBMDockerRegistry, IBMObjectStore")
+
+	flag.Parse()
+
+	if options.Dryrun {
+		options.Lean = true
+		options.Compact = true
+	}
+
+	flag.BoolVar(&options.Lean, "lean", options.Lean, "run with minimum memory consumtion, valid only if dryrun=true")
+	flag.BoolVar(&options.Compact, "compact", options.Compact, "playback in compact mode")
 
 	flag.Parse()
 
@@ -355,7 +365,14 @@ func main() {
 		},
 	}, options.Concurrency, proxy.PoolForStrictConcurrency)
 
-	reader := readers.NewIBMDockerRegistryReader(traceFile)
+	var reader readers.RecordReader
+	switch strings.ToLower(options.TraceName) {
+	case "ibmobjectstore":
+		reader = readers.NewIBMObjectStoreReader(traceFile)
+	default:
+		reader = readers.NewIBMDockerRegistryReader(traceFile)
+	}
+
 	timer := time.NewTimer(0)
 	timerCanceller := make(chan time.Time, 1)
 	start := time.Now()
@@ -380,12 +397,16 @@ func main() {
 		}
 
 		rec, err := reader.Read()
+		read++
 		if err == io.EOF {
 			break
 		} else if err != nil {
 			panic(err)
 		} else if rec.Error != nil {
-			log.Warn("%v", rec.Error)
+			log.Warn("Skip %d: %v", read, rec.Error)
+			continue
+		} else if rec.Method != "" && rec.Method != "GET" && rec.Method != "PUT" {
+			log.Debug("Skip %d: unsupported method %v", read, rec.Method)
 			continue
 		}
 
@@ -407,19 +428,7 @@ func main() {
 				default:
 				}
 			}
-			// timeout := time.Duration(options.Interval) * time.Millisecond
-			// if options.Compact {
-			// 	next := obj.Time.Sub(lastObject.Time)
-			// 	if next < timeout {
-			// 		timeout = next
-			// 	}
-			// } else {
-			// 	// Use absolute time span for accuracy
-			// 	timeout = obj.Time.Sub(startObject.Time) - skippedDuration - time.Since(start)
-			// }
-			// if timeout <= 0 || (options.Dryrun && options.Compact) {
-			// 	timeout = 0
-			// }
+
 			// Use absolute time span for accuracy
 			timeout = time.Duration(obj.Timestamp-startObject.Timestamp) - skippedDuration - planned.Sub(start)
 			if timeout <= 0 {
@@ -427,23 +436,23 @@ func main() {
 			}
 
 			// On skiping, use elapsed to record time.
-			if read >= options.Skip {
+			if read > options.Skip {
 				if timeout > 0 {
-					log.Info("Playback %d in %v", read+1, timeout)
+					log.Info("Playback %d in %v", read, timeout)
 					timer.Reset(timeout)
 					planned = planned.Add(timeout)
 				}
 			} else {
 				skippedDuration += timeout
 				if timeout > 0 {
-					log.Info("Skip %d: %v", read+1, timeout)
+					log.Info("Skip %d: %v", read, timeout)
 				}
 			}
 		} else {
 			startObject = obj
 		}
 
-		if read >= options.Skip {
+		if read > options.Skip {
 			now := planned
 			if timeout > 0 {
 				select {
@@ -503,13 +512,12 @@ func main() {
 				clients.Put(cli)
 				log.Debug("csv,%s,%s,%d,%d,%d", reqId, obj.Key, expected, actural, obj.Size)
 				// cond.Signal()
-			}(read+1, cli, proxies[id], obj, time.Duration(obj.Timestamp-startObject.Timestamp), skippedDuration+now.Sub(start))
+			}(read, cli, proxies[id], obj, time.Duration(obj.Timestamp-startObject.Timestamp), skippedDuration+now.Sub(start))
 
 			// cond.L.Unlock()
 		}
 
 		lastObject = obj
-		read++
 	}
 
 	totalMem := float64(0)
@@ -553,6 +561,9 @@ func main() {
 	syslog.Printf("Active Minutes %d\n", activated)
 	syslog.Printf("BalancerCost: %s(%s per request)", balancerCost, balancerCost/time.Duration(read-options.Skip))
 	syslog.Printf("Max concurrency: %d, clients initialized: %d\n", maxConcurrency, atomic.LoadInt32(&numClients))
+	for _, msg := range reader.Report() {
+		syslog.Println(msg)
+	}
 
 	clients.Close()
 }
