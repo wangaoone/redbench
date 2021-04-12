@@ -23,6 +23,7 @@ package main
 
 import (
 	"flag"
+	sysflag "flag"
 	"fmt"
 	"io"
 	syslog "log"
@@ -46,6 +47,7 @@ import (
 	"github.com/mason-leap-lab/infinicache/proxy/global"
 	"github.com/wangaoone/redbench/benchclient"
 
+	"github.com/wangaoone/redbench/simulator/playback/helpers"
 	"github.com/wangaoone/redbench/simulator/playback/proxy"
 	"github.com/wangaoone/redbench/simulator/readers"
 )
@@ -87,6 +89,8 @@ type Options struct {
 	MaxSz          uint64
 	ScaleFrom      uint64
 	ScaleSz        float64
+	Limit          int64
+	LimitHour      int64
 	Skip           int64
 	S3             string
 	Redis          string
@@ -120,10 +124,9 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 	dryrun := 0
 	if opts.Dryrun {
 		dryrun = opts.Cluster
-		if opts.Bandwidth > 0 {
-			timeToSleep := time.Duration(float64(obj.Size)/float64(opts.Bandwidth)*float64(time.Second)) + 1*time.Millisecond
-			log.Debug("Sleep %v to simulate processing %s: ", timeToSleep, obj.Key)
-			time.Sleep(timeToSleep)
+		if !opts.Compact && obj.Estimation > time.Duration(0) {
+			log.Debug("Sleep %v to simulate processing %s: ", obj.Estimation, obj.Key)
+			time.Sleep(obj.Estimation)
 		}
 	}
 
@@ -267,6 +270,8 @@ func helpInfo() {
 }
 
 func main() {
+	flag := &sysflag.FlagSet{}
+
 	var printInfo bool
 	flag.BoolVar(&printInfo, "h", false, "help info?")
 
@@ -288,6 +293,8 @@ func main() {
 	flag.Uint64Var(&options.MaxSz, "maxsz", 2147483648, "max object size")
 	flag.Uint64Var(&options.ScaleFrom, "scalefrom", 104857600, "objects larger than this size will be scaled")
 	flag.Float64Var(&options.ScaleSz, "scalesz", 1, "scale object size")
+	flag.Int64Var(&options.Limit, "limit", 0, "limit to play N records only")
+	flag.Int64Var(&options.LimitHour, "limitHour", 0, "limit to play N hours only")
 	flag.Int64Var(&options.Skip, "skip", 0, "skip N records")
 	flag.StringVar(&options.S3, "s3", "", "s3 bucket for enable s3 simulation")
 	flag.StringVar(&options.Redis, "redis", "", "Redis for enable Redis simulation")
@@ -297,7 +304,7 @@ func main() {
 	flag.Int64Var(&options.Bandwidth, "w", 0, "unit bandwidth per shard in MiB/s. 0 for unlimited bandwidth")
 	flag.StringVar(&options.TraceName, "trace", "IBMDockerRegistry", "type of trace: IBMDockerRegistry, IBMObjectStore")
 
-	flag.Parse()
+	flag.Parse(os.Args[1:])
 
 	if options.Dryrun {
 		options.Lean = true
@@ -307,8 +314,11 @@ func main() {
 	flag.BoolVar(&options.Lean, "lean", options.Lean, "run with minimum memory consumtion, valid only if dryrun=true")
 	flag.BoolVar(&options.Compact, "compact", options.Compact, "playback in compact mode")
 
-	flag.Parse()
-
+	flagErr := flag.Parse(os.Args[1:])
+	if flagErr != nil {
+		syslog.Fatalln(flagErr)
+		printInfo = true
+	}
 	if printInfo || flag.NArg() < 1 {
 		helpInfo()
 		os.Exit(0)
@@ -374,12 +384,11 @@ func main() {
 	}
 
 	timer := time.NewTimer(0)
-	timerCanceller := make(chan time.Time, 1)
-	start := time.Now()
+	requestsCleared := make(chan time.Time, 1) // To be notified that all invoked requests were responded.
 	read := int64(0)
 	var skippedDuration time.Duration
+	var firstObject *proxy.Object
 	var startObject *proxy.Object
-	var lastObject *proxy.Object
 	var concurrency int32
 	var maxConcurrency int32
 	// cond := sync.NewCond(&sync.Mutex{})
@@ -391,11 +400,32 @@ func main() {
 		log.Info("Receive signal, stop server...")
 		close = true
 	}()
+	var skipper *helpers.TimeSkipper
+	if options.Dryrun && options.Compact && options.Bandwidth > 0 {
+		skipper = helpers.NewTimeSkipper(options.Concurrency)
+	}
+
+	// Start replaying.
+	start := time.Now()
+	stop := int64(0)
+	if options.Limit > 0 {
+		stop = options.Skip + options.Limit
+	}
+	stopAt := time.Duration(0)
+	if options.LimitHour > 0 {
+		stopAt = time.Duration(options.LimitHour) * time.Hour
+	}
 	for {
 		if close {
+			// Close check
+			break
+		} else if stop > 0 && read >= stop {
+			// Limit check
+			log.Info("Limit(%d) reached.", options.Limit)
 			break
 		}
 
+		// Read next request.
 		rec, err := reader.Read()
 		read++
 		if err == io.EOF {
@@ -418,10 +448,17 @@ func main() {
 			obj.Size = uint64(float64(obj.Size) * options.ScaleSz)
 		}
 		obj.ChunkSz = obj.Size / uint64(options.Datashard)
+		if options.Bandwidth > 0 {
+			obj.Estimation = time.Duration(float64(obj.Size)/float64(options.Bandwidth)*float64(time.Second)) + 1*time.Millisecond
+		}
 
-		var timeout time.Duration
+		// Calculate the time to invoke the request.
+		var timeToStart time.Duration
 		planned := time.Now()
-		if lastObject != nil {
+		if firstObject == nil {
+			firstObject = obj
+		} else {
+			// Stop timer to be safe.
 			if !timer.Stop() {
 				select {
 				case <-timer.C:
@@ -429,44 +466,63 @@ func main() {
 				}
 			}
 
-			// Use absolute time span for accuracy
-			timeout = time.Duration(obj.Timestamp-startObject.Timestamp) - skippedDuration - planned.Sub(start)
-			if timeout <= 0 {
-				timeout = 0
+			// Use absolute time span for accuracy: time difference in trace - skipped - time replayed
+			timeToStart = time.Duration(obj.Timestamp-firstObject.Timestamp) - skippedDuration - planned.Sub(start)
+			if timeToStart <= 0 {
+				timeToStart = 0
 			}
 
 			// On skiping, use elapsed to record time.
-			if read > options.Skip {
-				if timeout > 0 {
-					log.Info("Playback %d in %v", read, timeout)
-					timer.Reset(timeout)
-					planned = planned.Add(timeout)
+			if read <= options.Skip {
+				skippedDuration += timeToStart
+				if timeToStart > 0 {
+					log.Info("Skip %d: %v", read, timeToStart)
 				}
 			} else {
-				skippedDuration += timeout
-				if timeout > 0 {
-					log.Info("Skip %d: %v", read, timeout)
+				if timeToStart > 0 {
+					timer.Reset(timeToStart)
+					planned = planned.Add(timeToStart)
+					log.Info("Playback %d in %v", read, timeToStart)
 				}
 			}
-		} else {
-			startObject = obj
 		}
 
+		// Playback
 		if read > options.Skip {
-			now := planned
-			if timeout > 0 {
-				select {
-				case cancelledAt := <-timerCanceller:
-					skipped := now.Sub(cancelledAt)
-					if skipped < 0 {
-						skipped = 0
+			if startObject == nil {
+				startObject = obj
+			}
+
+			if stopAt > time.Duration(0) && stopAt < time.Duration(obj.Timestamp-startObject.Timestamp) {
+				log.Info("Time limit(%v) reached.", stopAt)
+				break
+			}
+
+			now := time.Now()
+			if timeToStart > 0 {
+				if skipper != nil {
+					// Use skipper in dryrun and compact mode.
+					skipper.SkipTo(planned)
+					skippedDuration += planned.Sub(now) // Update total duration skipped.
+					log.Info("Simulating skipped and forwarded %v in compact mode", timeToStart)
+				} else if !options.Compact {
+					// In normal mode, wait for the next request.
+					now = <-timer.C
+				} else {
+					select {
+					// In compact mode, cleared event will be the time to can skip to the next request.
+					case clearedAt := <-requestsCleared:
+						skipped := planned.Sub(clearedAt) // Calculate duration to skip.
+						if skipped < 0 {
+							skipped = 0
+						}
+						skippedDuration += skipped // Update total duration skipped.
+						now = clearedAt
+						log.Info("Forwarded %v in compact mode", skipped)
+						// No need to stop timer. It is stopped on processing each object.
+					case now = <-timer.C:
+						// Do nothing
 					}
-					skippedDuration += skipped
-					now = cancelledAt
-					log.Info("Skipped %v in compact mode", skipped)
-					// No need to stop timer. It is stopped on processing each object.
-				case now = <-timer.C:
-					// Do nothing
 				}
 			}
 
@@ -479,11 +535,15 @@ func main() {
 			// for options.Concurrency > 0 && atomic.LoadInt32(&concurrency) >= int32(options.Concurrency) {
 			// 	cond.Wait()
 			// }
-
 			cli := clients.Get().(benchclient.Client)
 
 			// Start perform
-			go func(sn int64, cli benchclient.Client, p *proxy.Proxy, obj *proxy.Object, expected time.Duration, scheduled time.Duration) {
+			var notifier *helpers.TimeSkipNotification
+			if skipper != nil {
+				log.Debug("Mark to skip %v for simulating processing %d:%s", obj.Estimation, read, obj.Key)
+				notifier = skipper.MarkDuration(read, obj.Estimation)
+			}
+			go func(sn int64, cli benchclient.Client, p *proxy.Proxy, obj *proxy.Object, expected time.Duration, scheduled time.Duration, notifier *helpers.TimeSkipNotification) {
 				// defer func() {
 				// 	finalize(finalizeOptions)
 				// 	// if err := recover(); err != nil {
@@ -502,23 +562,35 @@ func main() {
 				log.Info("%d(c:%d) Playbacking %v %s (expc %v, schd %v, actc %v)...", sn, c, obj.Key, humanize.Bytes(obj.Size), expected, scheduled, actural)
 
 				_, reqId := perform(options, cli, p, obj)
+				clients.Put(cli)
+				if notifier != nil {
+					notifier.Wait()
+					// log.Debug("Skipped %d:%s", sn, obj.Key)
+				}
 
-				if atomic.AddInt32(&concurrency, -1) == 0 && options.Compact {
+				// Requests cleared
+				if atomic.AddInt32(&concurrency, -1) == 0 {
 					select {
-					case timerCanceller <- time.Now():
+					case requestsCleared <- time.Now():
 					default:
+						// update
+						<-requestsCleared
+						requestsCleared <- time.Now()
 					}
 				}
-				clients.Put(cli)
 				log.Debug("csv,%s,%s,%d,%d,%d", reqId, obj.Key, expected, actural, obj.Size)
 				// cond.Signal()
-			}(read, cli, proxies[id], obj, time.Duration(obj.Timestamp-startObject.Timestamp), skippedDuration+now.Sub(start))
+			}(read, cli, proxies[id], obj, time.Duration(obj.Timestamp-firstObject.Timestamp), skippedDuration+now.Sub(start), notifier)
 
 			// cond.L.Unlock()
 		}
-
-		lastObject = obj
 	}
+
+	// Wait for all current requests to be cleared.
+	if skipper != nil {
+		skippedDuration += skipper.SkipAll()
+	}
+	<-requestsCleared
 
 	totalMem := float64(0)
 	maxMem := float64(0)
@@ -553,6 +625,7 @@ func main() {
 		balancerCost += prxy.BalancerCost
 		prxy.Close()
 	}
+	syslog.Printf("Time elpased: %v\n", time.Since(start))
 	syslog.Printf("Total records: %d\n", read-options.Skip)
 	syslog.Printf("Total memory consumed: %s\n", humanize.Bytes(uint64(totalMem)))
 	syslog.Printf("Memory consumed per lambda: %s - %s\n", humanize.Bytes(uint64(minMem)), humanize.Bytes(uint64(maxMem)))

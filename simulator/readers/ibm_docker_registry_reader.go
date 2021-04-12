@@ -44,14 +44,14 @@ func (reader *IBMDockerRegistryReader) Read() (*Record, error) {
 
 	rec.Key = line[6]
 	sz, szErr := strconv.ParseFloat(line[9], 64)
-	if szErr != nil {
+	if szErr == nil {
 		rec.Size = uint64(sz)
 	}
 	ts, tErr := time.Parse(IBMDockerRegistryTimePattern, line[11][:len(IBMDockerRegistryTimePattern)])
 	if tErr != nil {
 		ts, tErr = time.Parse(IBMDockerRegistryTimePattern2, line[11][:len(IBMDockerRegistryTimePattern2)])
 	}
-	if tErr != nil {
+	if tErr == nil {
 		rec.Timestamp = ts.UnixNano()
 	}
 

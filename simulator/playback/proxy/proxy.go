@@ -22,7 +22,8 @@ type Chunk struct {
 
 type Object struct {
 	*readers.Record
-	ChunkSz uint64
+	ChunkSz    uint64
+	Estimation time.Duration // Estimate execution time
 }
 
 type Lambda struct {
