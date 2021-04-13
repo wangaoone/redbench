@@ -22,7 +22,6 @@ SOFTWARE.
 package main
 
 import (
-	"flag"
 	sysflag "flag"
 	"fmt"
 	"io"
@@ -72,33 +71,35 @@ func init() {
 }
 
 type Options struct {
-	AddrList       string
-	Cluster        int
-	Datashard      int
-	Parityshard    int
-	ECmaxgoroutine int
-	CSV            bool
-	Stdout         io.Writer
-	Stderr         io.Writer
-	NoDebug        bool
-	SummaryOnly    bool
-	File           string
-	Compact        bool
-	Dryrun         bool
-	Lean           bool
-	MaxSz          uint64
-	ScaleFrom      uint64
-	ScaleSz        float64
-	Limit          int64
-	LimitHour      int64
-	Skip           int64
-	S3             string
-	Redis          string
-	RedisCluster   bool
-	Balance        bool
-	Concurrency    int
-	Bandwidth      int64
-	TraceName      string
+	AddrList        string
+	Cluster         int
+	Datashard       int
+	Parityshard     int
+	ECmaxgoroutine  int
+	CSV             bool
+	Stdout          io.Writer
+	Stderr          io.Writer
+	NoDebug         bool
+	SummaryOnly     bool
+	File            string
+	Compact         bool
+	Dryrun          bool
+	Lean            bool
+	MaxSz           uint64
+	ScaleFrom       uint64
+	ScaleSz         float64
+	Limit           int64
+	LimitHour       int64
+	Skip            int64
+	S3              string
+	Redis           string
+	RedisCluster    bool
+	Balance         bool
+	Concurrency     int
+	Bandwidth       int64
+	TraceName       string
+	SampleFractions uint64
+	SampleKey       uint64
 }
 
 type FinalizeOptions struct {
@@ -184,7 +185,8 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 		for i, idx := range placements {
 			chk, ok := p.LambdaPool[idx].GetChunk(fmt.Sprintf("%d@%s", i, obj.Key))
 			if !ok {
-				log.Error("Unexpected key %s not found in %d", chk.Key, idx)
+				log.Error("Unexpected key %d@%s not found in %d", i, obj.Key, idx)
+				continue
 			}
 			chk.Freq++
 			p.LambdaPool[idx].Activate(obj.Timestamp)
@@ -263,7 +265,7 @@ func initProxies(nProxies int, opts *Options) ([]*proxy.Proxy, *consistent.Consi
 	return proxies, ring
 }
 
-func helpInfo() {
+func helpInfo(flag *sysflag.FlagSet) {
 	fmt.Fprintf(os.Stderr, "Usage: ./playback [options] tracefile\n")
 	fmt.Fprintf(os.Stderr, "Available options:\n")
 	flag.PrintDefaults()
@@ -303,6 +305,8 @@ func main() {
 	flag.IntVar(&options.Concurrency, "c", 100, "max concurrency allowed, minimum 1.")
 	flag.Int64Var(&options.Bandwidth, "w", 0, "unit bandwidth per shard in MiB/s. 0 for unlimited bandwidth")
 	flag.StringVar(&options.TraceName, "trace", "IBMDockerRegistry", "type of trace: IBMDockerRegistry, IBMObjectStore")
+	flag.Uint64Var(&options.SampleFractions, "sf", 1, "enable sampling by raising fraction's denominator.")
+	flag.Uint64Var(&options.SampleKey, "sk", 0, "the key of sample")
 
 	flag.Parse(os.Args[1:])
 
@@ -320,7 +324,7 @@ func main() {
 		printInfo = true
 	}
 	if printInfo || flag.NArg() < 1 {
-		helpInfo()
+		helpInfo(flag)
 		os.Exit(0)
 	}
 
@@ -387,8 +391,8 @@ func main() {
 	requestsCleared := make(chan time.Time, 1) // To be notified that all invoked requests were responded.
 	read := int64(0)
 	var skippedDuration time.Duration
-	var firstObject *proxy.Object
-	var startObject *proxy.Object
+	var firstTs int64
+	var startTs int64
 	var concurrency int32
 	var maxConcurrency int32
 	// cond := sync.NewCond(&sync.Mutex{})
@@ -432,11 +436,21 @@ func main() {
 			break
 		} else if err != nil {
 			panic(err)
+		} else if rec.Error == readers.ErrIgnoreIBMObjectStoreFragment {
+			reader.Done(rec)
+			log.Debug("Skip %d: %v", read, rec.Error)
+			continue
 		} else if rec.Error != nil {
+			reader.Done(rec)
 			log.Warn("Skip %d: %v", read, rec.Error)
 			continue
 		} else if rec.Method != "" && rec.Method != "GET" && rec.Method != "PUT" {
+			reader.Done(rec)
 			log.Debug("Skip %d: unsupported method %v", read, rec.Method)
+			continue
+		} else if options.SampleFractions > 1 && (xxhash.Sum64([]byte(rec.Key))%options.SampleFractions) != options.SampleKey {
+			// Sampleing
+			reader.Done(rec)
 			continue
 		}
 
@@ -455,8 +469,8 @@ func main() {
 		// Calculate the time to invoke the request.
 		var timeToStart time.Duration
 		planned := time.Now()
-		if firstObject == nil {
-			firstObject = obj
+		if firstTs == 0 {
+			firstTs = obj.Timestamp
 		} else {
 			// Stop timer to be safe.
 			if !timer.Stop() {
@@ -467,7 +481,7 @@ func main() {
 			}
 
 			// Use absolute time span for accuracy: time difference in trace - skipped - time replayed
-			timeToStart = time.Duration(obj.Timestamp-firstObject.Timestamp) - skippedDuration - planned.Sub(start)
+			timeToStart = time.Duration(obj.Timestamp-firstTs) - skippedDuration - planned.Sub(start)
 			if timeToStart <= 0 {
 				timeToStart = 0
 			}
@@ -489,11 +503,11 @@ func main() {
 
 		// Playback
 		if read > options.Skip {
-			if startObject == nil {
-				startObject = obj
+			if startTs == 0 {
+				startTs = obj.Timestamp
 			}
 
-			if stopAt > time.Duration(0) && stopAt < time.Duration(obj.Timestamp-startObject.Timestamp) {
+			if stopAt > time.Duration(0) && stopAt < time.Duration(obj.Timestamp-startTs) {
 				log.Info("Time limit(%v) reached.", stopAt)
 				break
 			}
@@ -579,8 +593,10 @@ func main() {
 					}
 				}
 				log.Debug("csv,%s,%s,%d,%d,%d", reqId, obj.Key, expected, actural, obj.Size)
+				reader.Done(obj.Record)
+				obj.Record = nil
 				// cond.Signal()
-			}(read, cli, proxies[id], obj, time.Duration(obj.Timestamp-firstObject.Timestamp), skippedDuration+now.Sub(start), notifier)
+			}(read, cli, proxies[id], obj, time.Duration(obj.Timestamp-firstTs), skippedDuration+now.Sub(start), notifier)
 
 			// cond.L.Unlock()
 		}

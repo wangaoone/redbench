@@ -8,6 +8,8 @@ import (
 	"io"
 	"regexp"
 	"strconv"
+	"sync"
+	"time"
 )
 
 var (
@@ -18,24 +20,33 @@ var (
 	ErrUnexpectedIBMObjectStoreOverlappedFragment = errors.New("unexpected fragment trace")
 )
 
-type fragmentTracer struct {
-	Key  string
-	Size uint64
-	Seen uint64
-	Map  []uint64
-}
+// type fragmentTracer struct {
+// 	Key  string
+// 	Size uint64
+// 	Seen uint64
+// 	Map  []uint64
+// }
 
 type IBMObjectStoreReader struct {
-	backend         *csv.Reader
-	cursor          int
-	incompleted     map[string]*fragmentTracer
-	incompletedSeen int
+	*BaseReader
+
+	backend *csv.Reader
+	cursor  int
+	// incompleted map[string]*fragmentTracer
+	// incompletedSeen int
+	pool *sync.Pool
 }
 
 func NewIBMObjectStoreReader(rd io.Reader) *IBMObjectStoreReader {
 	reader := &IBMObjectStoreReader{
-		backend:     csv.NewReader(bufio.NewReader(rd)),
-		incompleted: make(map[string]*fragmentTracer, 100),
+		BaseReader: NewBaseReader(),
+		backend:    csv.NewReader(bufio.NewReader(rd)),
+		// incompleted: make(map[string]*fragmentTracer, 100),
+		pool: &sync.Pool{
+			New: func() interface{} {
+				return &Record{}
+			},
+		},
 	}
 	reader.backend.Comma = ' '          // Space separated.
 	reader.backend.FieldsPerRecord = -1 // Variable number of fields.
@@ -48,10 +59,10 @@ func (reader *IBMObjectStoreReader) Read() (*Record, error) {
 		return nil, err
 	}
 
-	rec := &Record{}
+	rec, _ := reader.BaseReader.Read()
 	reader.cursor++
 
-	if len(line) < 4 {
+	if len(line) < 3 {
 		rec.Error = fmt.Errorf("invalid record, line %d: %v", reader.cursor, line)
 		return rec, nil
 	}
@@ -64,7 +75,8 @@ func (reader *IBMObjectStoreReader) Read() (*Record, error) {
 }
 
 func (reader *IBMObjectStoreReader) Report() []string {
-	return []string{fmt.Sprintf("Incomplete fragments: %d", len(reader.incompleted))}
+	return []string{"Incomplete fragments: disabled"}
+	// return []string{fmt.Sprintf("Incomplete fragments: %d", len(reader.incompleted))}
 }
 
 func (reader *IBMObjectStoreReader) validate(fields []string, rec *Record) (err error) {
@@ -73,6 +85,7 @@ func (reader *IBMObjectStoreReader) validate(fields []string, rec *Record) (err 
 	if err != nil {
 		return
 	}
+	rec.Timestamp = rec.Timestamp * int64(time.Millisecond)
 
 	// Parse method
 	matches := IBMObjectStoreMethodPattern.FindStringSubmatch(fields[1])
@@ -85,9 +98,11 @@ func (reader *IBMObjectStoreReader) validate(fields []string, rec *Record) (err 
 	rec.Key = fmt.Sprintf("/ibm/objectstore/%s", fields[2])
 
 	// Parse size
-	rec.Size, err = strconv.ParseUint(fields[3], 10, 64)
-	if err != nil {
-		return
+	if len(fields) > 3 {
+		rec.Size, err = strconv.ParseUint(fields[3], 10, 64)
+		if err != nil {
+			return
+		}
 	}
 
 	// Fragment
@@ -118,60 +133,65 @@ func (reader *IBMObjectStoreReader) validate(fields []string, rec *Record) (err 
 }
 
 func (reader *IBMObjectStoreReader) checkFragment(rec *Record) error {
-	fragment, exist := reader.incompleted[rec.Key]
-	if !exist {
-		fragment = &fragmentTracer{
-			Key:  rec.Key,
-			Size: rec.Size,
-			Seen: rec.End - rec.Start + 1,
-			Map:  make([]uint64, 2, 100), // Just big enough for most cases.
-		}
-		fragment.Map[0] = rec.Start
-		fragment.Map[1] = rec.End
-		reader.incompleted[rec.Key] = fragment
-		reader.incompletedSeen++
-		return nil
+	if rec.Start != 0 {
+		return ErrIgnoreIBMObjectStoreFragment
 	}
 
-	// Check overlap
-	var i int
-	for i = 0; i < len(fragment.Map)/2; i++ {
-		if rec.End >= fragment.Map[i] && rec.Start <= fragment.Map[i+1] {
-			return ErrUnexpectedIBMObjectStoreOverlappedFragment
-		} else if i > 0 && rec.Start == fragment.Map[i-1]+1 && rec.End == fragment.Map[i]-1 {
-			// concat
-			fragment.Map[i-1] = fragment.Map[i+1]
-			fragment.Map = fragment.Map[:i]
-			break
-		} else if i > 0 && rec.Start == fragment.Map[i-1]+1 {
-			// merge to last range
-			fragment.Map[i-1] = rec.End
-			break
-		} else if rec.End == fragment.Map[i]-1 {
-			// merge to current range
-			fragment.Map[i] = rec.Start
-			break
-		} else if rec.End < fragment.Map[i] {
-			// insert a new range before the current range
-			fragment.Map = append(fragment.Map, 0, 0)
-			copy(fragment.Map[2:], fragment.Map[:len(fragment.Map)-2])
-			fragment.Map[0] = rec.Start
-			fragment.Map[1] = rec.End
-			break
-		}
-		// continue to next range
-	}
+	return nil
+	// fragment, exist := reader.incompleted[rec.Key]
+	// if !exist {
+	// 	fragment = &fragmentTracer{
+	// 		Key:  rec.Key,
+	// 		Size: rec.Size,
+	// 		Seen: rec.End - rec.Start + 1,
+	// 		Map:  make([]uint64, 2, 100), // Just big enough for most cases.
+	// 	}
+	// 	fragment.Map[0] = rec.Start
+	// 	fragment.Map[1] = rec.End
+	// 	reader.incompleted[rec.Key] = fragment
+	// 	reader.incompletedSeen++
+	// 	return nil
+	// }
 
-	// No overlap, update seen.
-	fragment.Seen += rec.End - rec.Start + 1
-	if fragment.Seen == fragment.Size {
-		delete(reader.incompleted, rec.Key)
-	} else if i < len(fragment.Map)/2 {
-		// pass
-	} else if rec.Start == fragment.Map[i-1]+1 {
-		fragment.Map[i-1] = rec.End
-	} else {
-		fragment.Map = append(fragment.Map, rec.Start, rec.End)
-	}
-	return ErrIgnoreIBMObjectStoreFragment
+	// // Check overlap
+	// var i int
+	// for i = 0; i < len(fragment.Map)/2; i++ {
+	// 	if rec.End >= fragment.Map[i] && rec.Start <= fragment.Map[i+1] {
+	// 		return ErrUnexpectedIBMObjectStoreOverlappedFragment
+	// 	} else if i > 0 && rec.Start == fragment.Map[i-1]+1 && rec.End == fragment.Map[i]-1 {
+	// 		// concat
+	// 		fragment.Map[i-1] = fragment.Map[i+1]
+	// 		fragment.Map = fragment.Map[:i]
+	// 		break
+	// 	} else if i > 0 && rec.Start == fragment.Map[i-1]+1 {
+	// 		// merge to last range
+	// 		fragment.Map[i-1] = rec.End
+	// 		break
+	// 	} else if rec.End == fragment.Map[i]-1 {
+	// 		// merge to current range
+	// 		fragment.Map[i] = rec.Start
+	// 		break
+	// 	} else if rec.End < fragment.Map[i] {
+	// 		// insert a new range before the current range
+	// 		fragment.Map = append(fragment.Map, 0, 0)
+	// 		copy(fragment.Map[2:], fragment.Map[:len(fragment.Map)-2])
+	// 		fragment.Map[0] = rec.Start
+	// 		fragment.Map[1] = rec.End
+	// 		break
+	// 	}
+	// 	// continue to next range
+	// }
+
+	// // No overlap, update seen.
+	// fragment.Seen += rec.End - rec.Start + 1
+	// if fragment.Seen == fragment.Size {
+	// 	delete(reader.incompleted, rec.Key)
+	// } else if i < len(fragment.Map)/2 {
+	// 	// pass
+	// } else if rec.Start == fragment.Map[i-1]+1 {
+	// 	fragment.Map[i-1] = rec.End
+	// } else {
+	// 	fragment.Map = append(fragment.Map, rec.Start, rec.End)
+	// }
+	// return ErrIgnoreIBMObjectStoreFragment
 }

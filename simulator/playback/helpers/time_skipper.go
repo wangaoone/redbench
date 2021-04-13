@@ -2,7 +2,6 @@ package helpers
 
 import (
 	"container/heap"
-	"log"
 	"runtime"
 	"sync"
 	"time"
@@ -142,7 +141,7 @@ func (s *TimeSkipper) SkipAll() time.Duration {
 		if skippedTo < n.timeout {
 			skippedTo = n.timeout
 		}
-		log.Printf("Wait done all %d\n", n.timeout)
+		// log.Printf("Wait done all %d\n", n.timeout)
 		n.skip()
 	}
 	s.mu.Unlock()

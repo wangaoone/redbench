@@ -15,12 +15,17 @@ const (
 )
 
 type IBMDockerRegistryReader struct {
+	*BaseReader
+
 	backend *csv.Reader
 	cursor  int
 }
 
 func NewIBMDockerRegistryReader(rd io.Reader) *IBMDockerRegistryReader {
-	return &IBMDockerRegistryReader{backend: csv.NewReader(bufio.NewReader(rd))}
+	return &IBMDockerRegistryReader{
+		BaseReader: NewBaseReader(),
+		backend:    csv.NewReader(bufio.NewReader(rd)),
+	}
 }
 
 func (reader *IBMDockerRegistryReader) Read() (*Record, error) {
@@ -39,7 +44,7 @@ func (reader *IBMDockerRegistryReader) Read() (*Record, error) {
 		return nil, err
 	}
 
-	rec := &Record{}
+	rec, _ := reader.BaseReader.Read()
 	reader.cursor++
 
 	rec.Key = line[6]
