@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	LAMBDA_OVERHEAD = 100
-	LAMBDA_CAPACITY = 1536
+	LAMBDA_OVERHEAD = 600
+	LAMBDA_CAPACITY = 2000
 )
 
 type Chunk struct {
@@ -22,12 +22,14 @@ type Chunk struct {
 
 type Object struct {
 	*readers.Record
+	DChunks    int
+	PChunks    int
 	ChunkSz    uint64
 	Estimation time.Duration // Estimate execution time
 }
 
 type Lambda struct {
-	Id             int
+	Id             uint64
 	Kvs            *hashmap.HashMap // map[string]*Chunk
 	MemUsed        uint64
 	ActiveMinutes  int
@@ -35,11 +37,11 @@ type Lambda struct {
 	Capacity       uint64
 	UsedPercentile int
 
-	block  int
-	blocks []int
+	block  uint64
+	blocks []uint64
 }
 
-func NewLambda(id int) *Lambda {
+func NewLambda(id uint64) *Lambda {
 	l := &Lambda{}
 	l.Id = id
 	l.Kvs = hashmap.New(1024)
@@ -102,7 +104,7 @@ func NewProxy(id string, numCluster int, balancer ProxyBalancer) *Proxy {
 		evicts:     hashmap.New(1024),
 	}
 	for i := 0; i < len(proxy.LambdaPool); i++ {
-		proxy.LambdaPool[i] = NewLambda(i)
+		proxy.LambdaPool[i] = NewLambda(uint64(i))
 	}
 	if balancer != nil {
 		balancer.SetProxy(proxy)
@@ -111,8 +113,8 @@ func NewProxy(id string, numCluster int, balancer ProxyBalancer) *Proxy {
 	return proxy
 }
 
-func (p *Proxy) ValidateLambda(lambdaId int) {
-	if lambdaId < len(p.LambdaPool) {
+func (p *Proxy) ValidateLambda(lambdaId uint64) {
+	if int(lambdaId) < len(p.LambdaPool) {
 		return
 	}
 
@@ -120,20 +122,20 @@ func (p *Proxy) ValidateLambda(lambdaId int) {
 	defer p.mu.Unlock()
 
 	lambdaPool := p.LambdaPool
-	if lambdaId >= cap(p.LambdaPool) {
+	if int(lambdaId) >= cap(p.LambdaPool) {
 		lambdaPool = make([]*Lambda, cap(p.LambdaPool)*2)
 		copy(lambdaPool[:len(p.LambdaPool)], p.LambdaPool)
 	}
-	if lambdaId >= len(p.LambdaPool) {
+	if int(lambdaId) >= len(p.LambdaPool) {
 		lambdaPool = lambdaPool[:lambdaId+1]
 		for i := len(p.LambdaPool); i < len(lambdaPool); i++ {
-			lambdaPool[i] = NewLambda(i)
+			lambdaPool[i] = NewLambda(uint64(i))
 		}
 		p.LambdaPool = lambdaPool
 	}
 }
 
-func (p *Proxy) Remap(placements []int, obj *Object) []int {
+func (p *Proxy) Remap(placements []uint64, obj *Object) []uint64 {
 	if p.Balancer == nil {
 		return placements
 	}
@@ -142,7 +144,7 @@ func (p *Proxy) Remap(placements []int, obj *Object) []int {
 	return p.Balancer.Remap(placements, obj)
 }
 
-func (p *Proxy) Adapt(lambdaId int, chk *Chunk) {
+func (p *Proxy) Adapt(lambdaId uint64, chk *Chunk) {
 	if p.Balancer == nil {
 		return
 	}
@@ -167,15 +169,15 @@ func (p *Proxy) IsSet(key string) bool {
 	return ok
 }
 
-func (p *Proxy) Placements(key string) []int {
+func (p *Proxy) Placements(key string) []uint64 {
 	if v, ok := p.placements.Get(key); ok {
-		return v.([]int)
+		return v.([]uint64)
 	} else {
 		return nil
 	}
 }
 
-func (p *Proxy) SetPlacements(key string, placements []int) {
+func (p *Proxy) SetPlacements(key string, placements []uint64) {
 	p.placements.Set(key, placements)
 }
 

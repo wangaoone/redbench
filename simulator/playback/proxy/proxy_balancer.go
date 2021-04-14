@@ -8,10 +8,10 @@ type ProxyBalancer interface {
 	Init()
 
 	// Remap random placement to actual placement
-	Remap([]int, *Object) []int
+	Remap([]uint64, *Object) []uint64
 
 	// Call on apply placement
-	Adapt(int, *Chunk)
+	Adapt(uint64, *Chunk)
 
 	// Validate if the object is evicted.
 	Validate(*Object) bool

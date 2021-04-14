@@ -7,9 +7,9 @@ import (
 
 type WeightedBalancer struct {
 	proxy        *Proxy
-	lambdaBlocks []int
-	nextGroup    int
-	nextLambda   int
+	lambdaBlocks []uint64
+	nextGroup    uint64
+	nextLambda   uint64
 }
 
 func (b *WeightedBalancer) SetProxy(p *Proxy) {
@@ -17,30 +17,30 @@ func (b *WeightedBalancer) SetProxy(p *Proxy) {
 }
 
 func (b *WeightedBalancer) Init() {
-	b.lambdaBlocks = make([]int, 100*len(b.proxy.LambdaPool))
+	b.lambdaBlocks = make([]uint64, 100*len(b.proxy.LambdaPool))
 	for j := 0; j < len(b.proxy.LambdaPool); j++ {
-		b.proxy.LambdaPool[j].blocks = make([]int, 100)
+		b.proxy.LambdaPool[j].blocks = make([]uint64, 100)
 	}
 	idx := 0
 	for i := 0; i < 100; i++ {
 		for j := 0; j < len(b.proxy.LambdaPool); j++ {
-			b.lambdaBlocks[idx] = j
-			b.proxy.LambdaPool[j].blocks[i] = idx
+			b.lambdaBlocks[idx] = uint64(j)
+			b.proxy.LambdaPool[j].blocks[i] = uint64(idx)
 			idx++
 		}
 	}
 }
 
-func (b *WeightedBalancer) Remap(placements []int, _ *Object) []int {
+func (b *WeightedBalancer) Remap(placements []uint64, _ *Object) []uint64 {
 	for i, placement := range placements {
 		// Mapping to lambda in nextGroup
 		placements[i] = b.lambdaBlocks[b.nextGroup*100+placement]
 	}
-	b.nextGroup = int(math.Mod(float64(b.nextGroup+1), 100))
+	b.nextGroup = uint64(math.Mod(float64(b.nextGroup+1), 100))
 	return placements
 }
 
-func (b *WeightedBalancer) Adapt(j int, _ *Chunk) {
+func (b *WeightedBalancer) Adapt(j uint64, _ *Chunk) {
 	// Remove a block from lambda, and allocated to nextLambda
 	l := b.proxy.LambdaPool[j]
 	for int(math.Floor(float64(l.MemUsed)/float64(l.Capacity)*100)) > l.UsedPercentile {
@@ -51,7 +51,7 @@ func (b *WeightedBalancer) Adapt(j int, _ *Chunk) {
 
 		// Skip current lambda
 		if b.nextLambda == j {
-			b.nextLambda = int(math.Mod(float64(b.nextLambda+1), float64(len(b.proxy.LambdaPool))))
+			b.nextLambda = uint64(math.Mod(float64(b.nextLambda+1), float64(len(b.proxy.LambdaPool))))
 		}
 
 		// Get block idx to be reallocated
@@ -68,7 +68,7 @@ func (b *WeightedBalancer) Adapt(j int, _ *Chunk) {
 		b.lambdaBlocks[reallocIdx] = b.nextLambda
 
 		// Move on
-		b.nextLambda = int(math.Mod(float64(b.nextLambda+1), float64(len(b.proxy.LambdaPool))))
+		b.nextLambda = uint64(math.Mod(float64(b.nextLambda+1), float64(len(b.proxy.LambdaPool))))
 
 		l.UsedPercentile++
 	}

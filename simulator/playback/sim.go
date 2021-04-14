@@ -143,12 +143,16 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 		if !success {
 			val := make([]byte, obj.Size)
 			rand.Read(val)
-			resetPlacements := make([]int, opts.Datashard+opts.Parityshard)
-			_, reset := cli.EcSet(obj.Key, val, dryrun, resetPlacements, "Reset")
+			resetPlacements32 := make([]int, opts.Datashard+opts.Parityshard)
+			_, reset := cli.EcSet(obj.Key, val, dryrun, resetPlacements32, "Reset")
 			if reset {
 				log.Trace("Reset %s.", obj.Key)
 
 				displaced := false
+				resetPlacements := make([]uint64, len(resetPlacements32))
+				for i := 0; i < len(resetPlacements32); i++ {
+					resetPlacements[i] = uint64(resetPlacements32[i])
+				}
 				resetPlacements = p.Remap(resetPlacements, obj)
 				for i, idx := range resetPlacements {
 					p.ValidateLambda(idx)
@@ -202,14 +206,18 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 			val = make([]byte, obj.Size)
 			rand.Read(val)
 		}
-		placements := make([]int, opts.Datashard+opts.Parityshard)
+		placements32 := make([]int, opts.Datashard+opts.Parityshard)
+		placements := make([]uint64, len(placements32))
 		dryrun := 0
 		if opts.Dryrun {
 			dryrun = opts.Cluster
 		}
-		reqId, success := cli.EcSet(obj.Key, val, dryrun, placements, "Normal")
+		reqId, success := cli.EcSet(obj.Key, val, dryrun, placements32, "Normal")
 		if !success {
 			return "set", reqId
+		}
+		for i := 0; i < len(placements32); i++ {
+			placements[i] = uint64(placements32[i])
 		}
 
 		placements = p.Remap(placements, obj)
@@ -244,9 +252,9 @@ func initProxies(nProxies int, opts *Options) ([]*proxy.Proxy, *consistent.Consi
 		var balancer proxy.ProxyBalancer
 		if opts.Balance {
 			// Balancer optiosn:
-			//balancer = &proxy.LRUPlacer{}
+			// balancer = &proxy.LRUPlacer{}
 			balancer = &proxy.PriorityBalancer{}
-			//balancer = &proxy.WeightedBalancer{}
+			// balancer = &proxy.WeightedBalancer{}
 		}
 		proxies[i] = proxy.NewProxy(strconv.Itoa(i), opts.Cluster, balancer)
 
@@ -461,9 +469,11 @@ func main() {
 		if obj.Size > options.ScaleFrom {
 			obj.Size = uint64(float64(obj.Size) * options.ScaleSz)
 		}
+		obj.DChunks = options.Datashard
+		obj.PChunks = options.Parityshard
 		obj.ChunkSz = obj.Size / uint64(options.Datashard)
 		if options.Bandwidth > 0 {
-			obj.Estimation = time.Duration(float64(obj.Size)/float64(options.Bandwidth)*float64(time.Second)) + 1*time.Millisecond
+			obj.Estimation = time.Duration(float64(obj.Size)/float64(options.Bandwidth)*float64(time.Second)) + 10*time.Millisecond
 		}
 
 		// Calculate the time to invoke the request.
