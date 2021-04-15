@@ -349,6 +349,8 @@ github.com/urfave/cli v1.22.1/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtX
 github.com/urfave/cli/v2 v2.1.1/go.mod h1:SE9GqnLQmjVa0iPEY0f1w3ygNIYcIJ0OKPMoW2caLfQ=
 github.com/walle/lll v1.0.1 h1:lbK8008fOXbQNYt8daBGUrjvElvlwlE7D7N/9dLP5IQ=
 github.com/walle/lll v1.0.1/go.mod h1:lYxcXzoPhiAHR9eaq+Yv7RYg1nIipLloBCIfPUzfaWQ=
+github.com/wangaoone/LambdaObjectstore v1.2.0 h1:OSIW/XsX+gI7uqioLn5bE0WA4LMrWJb8S6TDarzTGco=
+github.com/wangaoone/LambdaObjectstore v1.2.0/go.mod h1:SPDZ3CQPWda/dhVBBsLO4S1ZPX0nIKmyInjUitF7N+k=
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/zhangjyr/hashmap v1.0.2 h1:jgjuyeFEGSBb8mF7RcM8l/ePZcjfn9VyB3Ij3at9hIc=
