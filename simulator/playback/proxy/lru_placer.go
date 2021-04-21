@@ -31,7 +31,7 @@ func (lru *LRUPlacer) Init() {
 	for i := group.StartIndex(); i < group.EndIndex(); i = i.Next() {
 		ins := lambdastore.NewInstance("SimInstance", uint64(i))
 		// Update capacity, overhead should be consistent between infinicache configuration and simulator.
-		ins.Meta.Capacity = lru.proxy.LambdaPool[i].Capacity
+		ins.Meta.ResetCapacity(lru.proxy.LambdaPool[i].Capacity, lru.proxy.LambdaPool[i].MemUsed)
 		group.Set(group.Reserve(i, ins))
 	}
 	lru.instances = group.All()
@@ -57,7 +57,7 @@ func (lru *LRUPlacer) Remap(placements []uint64, obj *Object) []uint64 {
 				// _, _, _ = lru.backend.GetOrInsert(m.Key, m)
 
 				// Uncomment this to simulate proxy with eviction tracks.
-				_, _, postProcess := lru.backend.GetOrInsert(m.Key, m)
+				_, postProcess, _ := lru.backend.Insert(m.Key, m)
 				if postProcess != nil {
 					postProcess(lru.dropEvicted)
 				}

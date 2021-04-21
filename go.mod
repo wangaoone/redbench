@@ -2,7 +2,8 @@ module github.com/wangaoone/redbench
 
 go 1.15
 
-replace github.com/mason-leap-lab/infinicache => github.com/wangaoone/LambdaObjectstore v1.2.0
+replace github.com/mason-leap-lab/infinicache => /Users/Tianium/Studio/go/src/github.com/mason-leap-lab/infinicache
+// replace github.com/mason-leap-lab/infinicache => github.com/wangaoone/LambdaObjectstore v1.2.0
 
 require (
 	github.com/ScottMansfield/nanolog v0.2.0
