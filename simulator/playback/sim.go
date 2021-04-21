@@ -145,6 +145,8 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 			rand.Read(val)
 			resetPlacements32 := make([]int, opts.Datashard+opts.Parityshard)
 			_, reset := cli.EcSet(obj.Key, val, dryrun, resetPlacements32, "Reset")
+			// Reset is designed for caching system in normal(playback) mode.
+			// Only one of concurrent Reset requests is expected to success.
 			if reset {
 				log.Trace("Reset %s.", obj.Key)
 
@@ -163,21 +165,18 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 
 						displaced = true
 						p.LambdaPool[idx].AddChunk(chk)
-						p.LambdaPool[idx].MemUsed += chk.Sz
 					} else if idx != placements[i] {
 						// Placement changed?
 						displaced = true
 						log.Warn("Placement changed on reset %s, %d -> %d", chk.Key, placements[i], idx)
-						p.LambdaPool[placements[i]].MemUsed -= chk.Sz
 						p.LambdaPool[placements[i]].DelChunk(chk.Key)
 						p.LambdaPool[idx].AddChunk(chk)
-						p.LambdaPool[idx].MemUsed += chk.Sz
 					}
 					chk.Reset++
 					p.LambdaPool[idx].Activate(obj.Timestamp)
 				}
 				if displaced {
-					p.SetPlacements(obj.Key, resetPlacements)
+					p.ResetPlacements(obj.Key, resetPlacements)
 				}
 			}
 			return "get", reqId
@@ -214,6 +213,7 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 		}
 		reqId, success := cli.EcSet(obj.Key, val, dryrun, placements32, "Normal")
 		if !success {
+			p.ClearPlacements(obj.Key)
 			return "set", reqId
 		}
 		for i := 0; i < len(placements32); i++ {
@@ -232,8 +232,7 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 				}
 			}
 			p.ValidateLambda(idx)
-			p.LambdaPool[idx].AddChunk(chk)
-			p.LambdaPool[idx].MemUsed += chk.Sz
+			p.LambdaPool[idx].AddChunk(chk, fmt.Sprintf("i: %d, idx: %d", i, idx))
 			if opts.Dryrun && opts.Balance {
 				p.Adapt(idx, chk)
 			}
@@ -252,8 +251,8 @@ func initProxies(nProxies int, opts *Options) ([]*proxy.Proxy, *consistent.Consi
 		var balancer proxy.ProxyBalancer
 		if opts.Balance {
 			// Balancer optiosn:
-			// balancer = &proxy.LRUPlacer{}
-			balancer = &proxy.PriorityBalancer{}
+			balancer = &proxy.LRUPlacer{}
+			// balancer = &proxy.PriorityBalancer{}
 			// balancer = &proxy.WeightedBalancer{}
 		}
 		proxies[i] = proxy.NewProxy(strconv.Itoa(i), opts.Cluster, balancer)
@@ -375,6 +374,7 @@ func main() {
 			} else if options.RedisCluster {
 				cli = benchclient.NewElasticCache()
 			} else {
+				client.MaxLambdaStores = options.Cluster // override MaxLambdaStores config.
 				cli = client.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
 				if !options.Dryrun {
 					cli.(*client.Client).Dial(addrArr)

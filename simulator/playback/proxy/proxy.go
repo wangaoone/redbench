@@ -1,16 +1,26 @@
 package proxy
 
 import (
+	"errors"
+	"log"
 	"sync"
+	"sync/atomic"
 	"time"
 
+	"github.com/mason-leap-lab/infinicache/common/util/promise"
 	"github.com/wangaoone/redbench/simulator/readers"
 	"github.com/zhangjyr/hashmap"
 )
 
 const (
-	LAMBDA_OVERHEAD = 600
-	LAMBDA_CAPACITY = 2000
+	LAMBDA_OVERHEAD = 100
+	LAMBDA_CAPACITY = 1536
+)
+
+var (
+	ErrNoPlacementsTest  = errors.New("set placements before get placements first")
+	ErrPlacementsCleared = errors.New("placements cleared")
+	ErrPlacementsUnset   = errors.New("placements unset")
 )
 
 type Chunk struct {
@@ -59,21 +69,37 @@ func (l *Lambda) Activate(recTime int64) {
 	l.LastActive = recTime
 }
 
-func (l *Lambda) AddChunk(chunk *Chunk) {
+func (l *Lambda) AddChunk(chunk *Chunk, msgs ...string) {
+	msg := ""
+	if len(msgs) > 0 {
+		msg = msgs[0]
+	}
+
 	l.Kvs.Set(chunk.Key, chunk)
+	used := l.IncreaseMem(chunk.Sz)
+	log.Printf("Lambda %d size tracked: %d of %d (key:%s, Δ:%d). %s", l.Id, used, l.Capacity, chunk.Key, chunk.Sz, msg)
 }
 
 func (l *Lambda) GetChunk(key string) (*Chunk, bool) {
 	chunk, ok := l.Kvs.Get(key)
 	if ok {
 		return chunk.(*Chunk), ok
-	} else {
-		return nil, ok
 	}
+
+	return nil, ok
 }
 
-func (l *Lambda) DelChunk(key string) {
-	l.Kvs.Del(key)
+func (l *Lambda) DelChunk(key string) (*Chunk, bool) {
+	// No strict atomic is required here.
+	chunk, ok := l.GetChunk(key)
+	if ok {
+		used := l.DecreaseMem(chunk.Sz)
+		l.Kvs.Del(key)
+		log.Printf("Lambda %d size tracked: %d of %d (key:%s, Δ:-%d).", l.Id, used, l.Capacity, chunk.Key, chunk.Sz)
+		return chunk, ok
+	}
+
+	return nil, ok
 }
 
 func (l *Lambda) NumChunks() int {
@@ -82,6 +108,14 @@ func (l *Lambda) NumChunks() int {
 
 func (l *Lambda) AllChunks() <-chan hashmap.KeyValue {
 	return l.Kvs.Iter()
+}
+
+func (l *Lambda) IncreaseMem(mem uint64) uint64 {
+	return atomic.AddUint64(&l.MemUsed, mem)
+}
+
+func (l *Lambda) DecreaseMem(mem uint64) uint64 {
+	return atomic.AddUint64(&l.MemUsed, ^(mem - 1))
 }
 
 type Proxy struct {
@@ -170,15 +204,44 @@ func (p *Proxy) IsSet(key string) bool {
 }
 
 func (p *Proxy) Placements(key string) []uint64 {
-	if v, ok := p.placements.Get(key); ok {
-		return v.([]uint64)
+	// A successful insertion can proceed, or it should wait.
+	if v, ok := p.placements.GetOrInsert(key, promise.NewPromise()); !ok {
+		return nil
+	} else if ret, err := v.(promise.Promise).Result(); err == nil {
+		return ret.([]uint64)
 	} else {
+		// Placements cleared, retry.
+		return p.Placements(key)
+	}
+}
+
+func (p *Proxy) SetPlacements(key string, placements []uint64) error {
+	if v, ok := p.placements.Get(key); !ok {
+		return ErrNoPlacementsTest
+	} else {
+		v.(promise.Promise).Resolve(placements)
 		return nil
 	}
 }
 
-func (p *Proxy) SetPlacements(key string, placements []uint64) {
-	p.placements.Set(key, placements)
+func (p *Proxy) ResetPlacements(key string, placements []uint64) error {
+	if v, ok := p.placements.Get(key); !ok {
+		return ErrNoPlacementsTest
+	} else if !v.(promise.Promise).IsResolved() {
+		return ErrPlacementsUnset
+	}
+
+	ret := promise.Resolved(placements)
+	p.placements.Set(key, ret)
+	return nil
+}
+
+func (p *Proxy) ClearPlacements(key string) {
+	v, ok := p.placements.Get(key)
+	p.placements.Del(key)
+	if ok && !v.(promise.Promise).IsResolved() {
+		v.(promise.Promise).Resolve(nil, ErrPlacementsCleared)
+	}
 }
 
 func (p *Proxy) Evict(key string, chunk *Chunk) {
