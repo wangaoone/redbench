@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	SLICE_SIZE      = 100
 	LAMBDA_OVERHEAD = 100
 	LAMBDA_CAPACITY = 1536
 )

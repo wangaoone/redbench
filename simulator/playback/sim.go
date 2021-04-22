@@ -124,7 +124,7 @@ func (h hasher) Sum64(data []byte) uint64 {
 func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.Object) (string, string) {
 	dryrun := 0
 	if opts.Dryrun {
-		dryrun = opts.Cluster
+		dryrun = proxy.SLICE_SIZE
 		if !opts.Compact && obj.Estimation > time.Duration(0) {
 			log.Debug("Sleep %v to simulate processing %s: ", obj.Estimation, obj.Key)
 			time.Sleep(obj.Estimation)
@@ -207,10 +207,6 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 		}
 		placements32 := make([]int, opts.Datashard+opts.Parityshard)
 		placements := make([]uint64, len(placements32))
-		dryrun := 0
-		if opts.Dryrun {
-			dryrun = opts.Cluster
-		}
 		reqId, success := cli.EcSet(obj.Key, val, dryrun, placements32, "Normal")
 		if !success {
 			p.ClearPlacements(obj.Key)
@@ -374,7 +370,6 @@ func main() {
 			} else if options.RedisCluster {
 				cli = benchclient.NewElasticCache()
 			} else {
-				client.MaxLambdaStores = options.Cluster // override MaxLambdaStores config.
 				cli = client.NewClient(options.Datashard, options.Parityshard, options.ECmaxgoroutine)
 				if !options.Dryrun {
 					cli.(*client.Client).Dial(addrArr)

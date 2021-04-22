@@ -4,6 +4,7 @@ import (
 	"fmt"
 	syslog "log"
 	"sync"
+	"sync/atomic"
 
 	"github.com/mason-leap-lab/infinicache/proxy/lambdastore"
 	"github.com/mason-leap-lab/infinicache/proxy/server/cluster"
@@ -18,6 +19,7 @@ type LRUPlacer struct {
 
 	served    sync.WaitGroup
 	instances []*lambdastore.Instance
+	sliceBase uint64
 }
 
 func (lru *LRUPlacer) SetProxy(p *Proxy) {
@@ -46,8 +48,6 @@ func (lru *LRUPlacer) Init() {
 }
 
 func (lru *LRUPlacer) Remap(placements []uint64, obj *Object) []uint64 {
-	numCluster := len(lru.proxy.LambdaPool)
-
 	var remapped sync.WaitGroup
 	for i, lambdaId := range placements {
 		remapped.Add(1)
@@ -64,7 +64,7 @@ func (lru *LRUPlacer) Remap(placements []uint64, obj *Object) []uint64 {
 
 				remapped.Done()
 			}
-		}(lru.backend.NewMeta(obj.Key, int64(numCluster), obj.DChunks, obj.PChunks, i, int64(obj.ChunkSz), uint64(placements[i]), numCluster))
+		}(lru.backend.NewMeta(obj.Key, int64(obj.Size), obj.DChunks, obj.PChunks, i, int64(obj.ChunkSz), uint64(placements[i]), SLICE_SIZE))
 	}
 
 	remapped.Wait()
@@ -118,6 +118,10 @@ func (lru *LRUPlacer) GetActiveInstances(int) []*lambdastore.Instance {
 	return lru.instances
 }
 
+func (lru *LRUPlacer) GetSlice(size int) metastore.Slice {
+	return cluster.NewSlice(size, lru.nextSlice)
+}
+
 func (lru *LRUPlacer) Trigger(int, ...interface{}) {
 	// do nothing
 }
@@ -128,4 +132,8 @@ func (lru *LRUPlacer) Instance(id uint64) *lambdastore.Instance {
 
 func (lru *LRUPlacer) Recycle(ins types.LambdaDeployment) error {
 	return cluster.ErrUnsupported
+}
+
+func (lru *LRUPlacer) nextSlice(sliceSize int) (int, int) {
+	return int((atomic.AddUint64(&lru.sliceBase, uint64(sliceSize)) - uint64(sliceSize)) % uint64(len(lru.instances))), len(lru.instances)
 }
