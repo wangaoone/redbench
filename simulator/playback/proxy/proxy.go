@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"errors"
-	"log"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -71,14 +70,15 @@ func (l *Lambda) Activate(recTime int64) {
 }
 
 func (l *Lambda) AddChunk(chunk *Chunk, msgs ...string) {
-	msg := ""
-	if len(msgs) > 0 {
-		msg = msgs[0]
-	}
+	// msg := ""
+	// if len(msgs) > 0 {
+	// 	msg = msgs[0]
+	// }
 
 	l.Kvs.Set(chunk.Key, chunk)
-	used := l.IncreaseMem(chunk.Sz)
-	log.Printf("Lambda %d size tracked: %d of %d (key:%s, Δ:%d). %s", l.Id, used, l.Capacity, chunk.Key, chunk.Sz, msg)
+	l.IncreaseMem(chunk.Sz)
+	// used := l.IncreaseMem(chunk.Sz)
+	// log.Printf("Lambda %d size tracked: %d of %d (key:%s, Δ:%d). %s", l.Id, used, l.Capacity, chunk.Key, chunk.Sz, msg)
 }
 
 func (l *Lambda) GetChunk(key string) (*Chunk, bool) {
@@ -94,9 +94,10 @@ func (l *Lambda) DelChunk(key string) (*Chunk, bool) {
 	// No strict atomic is required here.
 	chunk, ok := l.GetChunk(key)
 	if ok {
-		used := l.DecreaseMem(chunk.Sz)
+		l.DecreaseMem(chunk.Sz)
+		// used := l.DecreaseMem(chunk.Sz)
 		l.Kvs.Del(key)
-		log.Printf("Lambda %d size tracked: %d of %d (key:%s, Δ:-%d).", l.Id, used, l.Capacity, chunk.Key, chunk.Sz)
+		// log.Printf("Lambda %d size tracked: %d of %d (key:%s, Δ:-%d).", l.Id, used, l.Capacity, chunk.Key, chunk.Sz)
 		return chunk, ok
 	}
 
