@@ -146,6 +146,9 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 			val := make([]byte, obj.Size)
 			rand.Read(val)
 			resetPlacements32 := make([]int, opts.Datashard+opts.Parityshard)
+			for i := 0; i < len(placements); i++ {
+				resetPlacements32[i] = int(placements[i])
+			}
 			_, reset := cli.EcSet(obj.Key, val, dryrun, resetPlacements32, "Reset")
 			// Reset is designed for caching system in normal(playback) mode.
 			// Only one of concurrent Reset requests is expected to success.
@@ -153,7 +156,11 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 				log.Trace("Reset %s.", obj.Key)
 
 				displaced := false
-				resetPlacements := p.Remap(placements, obj)
+				resetPlacements64 := make([]uint64, opts.Datashard+opts.Parityshard)
+				for i := 0; i < len(resetPlacements32); i++ {
+					resetPlacements64[i] = uint64(resetPlacements32[i])
+				}
+				resetPlacements := p.Remap(resetPlacements64, obj)
 				for i, idx := range resetPlacements {
 					p.ValidateLambda(idx)
 					chk, _ := p.LambdaPool[placements[i]].GetChunk(fmt.Sprintf("%d@%s", i, obj.Key))
@@ -167,7 +174,10 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 						log.Warn("Placement changed on reset %s, %d -> %d", chk.Key, placements[i], idx)
 						p.LambdaPool[placements[i]].DelChunk(chk.Key)
 					}
-					if chk != nil { // Unlikely, but just in case
+					if chk == nil {
+						// Unlikely, but just in case
+						log.Warn("Failed to track chunk %d@%s on resetting", i, obj.Key)
+					} else {
 						p.LambdaPool[idx].AddChunk(chk)
 						chk.Reset++
 					}
