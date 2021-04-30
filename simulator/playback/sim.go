@@ -194,7 +194,7 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 		}
 		return "get", reqId
 	} else {
-		log.Trace("No placements found: %v, %v", obj.Key, p.IsSet(obj.Key))
+		log.Trace("No placements found: %v", obj.Key)
 
 		// if key does not exist, generate the index array holding
 		// indexes of the destination lambdas
@@ -206,7 +206,6 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 		placements32 := make([]int, opts.Datashard+opts.Parityshard)
 		placements := make([]uint64, len(placements32))
 		reqId, success := cli.EcSet(obj.Key, val, dryrun, placements32, "Normal")
-		log.Debug("Set success %s? %v, %v", obj.Key, success, p.IsSet(obj.Key))
 		if !success {
 			p.ClearPlacements(obj.Key)
 			return "set", reqId
@@ -215,9 +214,7 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 			placements[i] = uint64(placements32[i])
 		}
 
-		log.Debug("Before remap %s, %v", obj.Key, p.IsSet(obj.Key))
 		placements = p.Remap(placements, obj)
-		log.Debug("After remap %s, %v", obj.Key, p.IsSet(obj.Key))
 		for i, idx := range placements {
 			chkKey := fmt.Sprintf("%d@%s", i, obj.Key)
 			chk := p.GetEvicted(chkKey)
@@ -228,21 +225,15 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 					Freq: 0,
 				}
 			}
-			// log.Debug("Before validate %s %d:%d, %v", obj.Key, i, idx, p.IsSet(obj.Key))
 			p.ValidateLambda(idx)
 			p.LambdaPool[idx].AddChunk(chk, fmt.Sprintf("i: %d, idx: %d", i, idx))
-			// log.Debug("Before adapt %s %d:%d, %v", obj.Key, i, idx, p.IsSet(obj.Key))
 			if opts.Dryrun && opts.Balance {
 				p.Adapt(idx, chk)
 			}
-			// log.Debug("After adapt %s %d:%d, %v", obj.Key, i, idx, p.IsSet(obj.Key))
 			p.LambdaPool[idx].Activate(obj.Timestamp)
-			log.Debug("After activate %s %d:%d, %v", obj.Key, i, idx, p.IsSet(obj.Key))
 		}
-		log.Trace("Set %s, placements: %v. %v", obj.Key, placements, p.IsSet(obj.Key))
-		if err := p.SetPlacements(obj.Key, placements); err != nil {
-			log.Error("Error on set placements: %v", err)
-		}
+		log.Trace("Set %s, placements: %v.", obj.Key, placements)
+		p.SetPlacements(obj.Key, placements)
 		return "set", reqId
 	}
 }
