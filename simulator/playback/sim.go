@@ -160,17 +160,17 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 					if chk == nil {
 						// Eviction tracked by simulator. Try find chunk from evicts.
 						chk = p.GetEvicted(fmt.Sprintf("%d@%s", i, obj.Key))
-
 						displaced = true
-						p.LambdaPool[idx].AddChunk(chk)
 					} else if idx != placements[i] {
 						// Placement changed?
 						displaced = true
 						log.Warn("Placement changed on reset %s, %d -> %d", chk.Key, placements[i], idx)
 						p.LambdaPool[placements[i]].DelChunk(chk.Key)
-						p.LambdaPool[idx].AddChunk(chk)
 					}
-					chk.Reset++
+					if chk != nil { // Unlikely, but just in case
+						p.LambdaPool[idx].AddChunk(chk)
+						chk.Reset++
+					}
 					p.LambdaPool[idx].Activate(obj.Timestamp)
 				}
 				if displaced {
