@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"errors"
-	"log"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -210,16 +209,12 @@ func (p *Proxy) IsSet(key string) bool {
 func (p *Proxy) Placements(key string) []uint64 {
 	// A successful insertion can proceed, or it should wait.
 	if v, ok := p.placements.GetOrInsert(key, promise.NewPromise()); !ok {
-		_, success := p.placements.Get(key)
-		log.Printf("Promise set: %s %v", key, success)
 		return nil
 	} else {
-		log.Printf("Is resolved? %s %v", key, v.(promise.Promise).IsResolved())
 		if ret, err := v.(promise.Promise).Result(); err == nil {
 			return ret.([]uint64)
 		} else {
 			// Placements cleared, retry.
-			log.Printf("Error on getting placments: %v", err)
 			return p.Placements(key)
 		}
 	}
@@ -227,10 +222,8 @@ func (p *Proxy) Placements(key string) []uint64 {
 
 func (p *Proxy) SetPlacements(key string, placements []uint64) error {
 	if v, ok := p.placements.Get(key); !ok {
-		log.Printf("No placment %s", key)
 		return ErrNoPlacementsTest
 	} else {
-		log.Printf("Resolve placement promise: %s %v", key, placements)
 		v.(promise.Promise).Resolve(placements)
 		return nil
 	}
@@ -251,7 +244,6 @@ func (p *Proxy) ResetPlacements(key string, placements []uint64) error {
 func (p *Proxy) ClearPlacements(key string) {
 	v, ok := p.placements.Get(key)
 	p.placements.Del(key)
-	log.Printf("Promise cleared: %s set: %v", key, ok)
 	if ok && !v.(promise.Promise).IsResolved() {
 		v.(promise.Promise).Resolve(nil, ErrPlacementsCleared)
 	}
