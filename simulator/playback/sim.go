@@ -456,6 +456,8 @@ func main() {
 			break
 		} else if err != nil {
 			panic(err)
+		} else if rec.Size == 0 {
+			continue
 		} else if rec.Error == readers.ErrIgnoreIBMObjectStoreFragment {
 			reader.Done(rec)
 			log.Debug("Skip %d: %v", read, rec.Error)
