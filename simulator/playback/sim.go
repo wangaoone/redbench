@@ -137,58 +137,59 @@ func perform(opts *Options, cli benchclient.Client, p *proxy.Proxy, obj *proxy.O
 	if placements := p.Placements(obj.Key); placements != nil {
 		log.Trace("Found placements of %v: %v", obj.Key, placements)
 
-		reqId, reader, success := cli.EcGet(obj.Key, dryrun)
-		if opts.Dryrun && opts.Balance {
-			success = p.Validate(obj)
-		}
+		reqId, reader, _ := cli.EcGet(obj.Key, dryrun)
+		// if opts.Dryrun && opts.Balance {
+		// 	success = p.Validate(obj)
+		// }
 
-		if !success {
-			val := make([]byte, obj.Size)
-			rand.Read(val)
-			resetPlacements32 := make([]int, opts.Datashard+opts.Parityshard)
-			for i := 0; i < len(placements); i++ {
-				resetPlacements32[i] = int(placements[i])
-			}
-			_, reset := cli.EcSet(obj.Key, val, dryrun, resetPlacements32, "Reset")
-			// Reset is designed for caching system in normal(playback) mode.
-			// Only one of concurrent Reset requests is expected to success.
-			if reset {
-				log.Trace("Reset %s.", obj.Key)
+		// if !success {
+		// 	val := make([]byte, obj.Size)
+		// 	rand.Read(val)
+		// 	resetPlacements32 := make([]int, opts.Datashard+opts.Parityshard)
+		// 	for i := 0; i < len(placements); i++ {
+		// 		resetPlacements32[i] = int(placements[i])
+		// 	}
+		// 	_, reset := cli.EcSet(obj.Key, val, dryrun, resetPlacements32, "Reset")
+		// 	// Reset is designed for caching system in normal(playback) mode.
+		// 	// Only one of concurrent Reset requests is expected to success.
+		// 	if reset {
+		// 		log.Trace("Reset %s.", obj.Key)
 
-				displaced := false
-				resetPlacements64 := make([]uint64, opts.Datashard+opts.Parityshard)
-				for i := 0; i < len(resetPlacements32); i++ {
-					resetPlacements64[i] = uint64(resetPlacements32[i])
-				}
-				resetPlacements := p.Remap(resetPlacements64, obj)
-				for i, idx := range resetPlacements {
-					p.ValidateLambda(idx)
-					chk, _ := p.LambdaPool[placements[i]].GetChunk(fmt.Sprintf("%d@%s", i, obj.Key))
-					if chk == nil {
-						// Eviction tracked by simulator. Try find chunk from evicts.
-						chk = p.GetEvicted(fmt.Sprintf("%d@%s", i, obj.Key))
-						displaced = true
-					} else if idx != placements[i] {
-						// Placement changed?
-						displaced = true
-						log.Warn("Placement changed on reset %s, %d -> %d", chk.Key, placements[i], idx)
-						p.LambdaPool[placements[i]].DelChunk(chk.Key)
-					}
-					if chk == nil {
-						// Unlikely, but just in case
-						log.Warn("Failed to track chunk %d@%s on resetting", i, obj.Key)
-					} else {
-						p.LambdaPool[idx].AddChunk(chk)
-						chk.Reset++
-					}
-					p.LambdaPool[idx].Activate(obj.Timestamp)
-				}
-				if displaced {
-					p.ResetPlacements(obj.Key, resetPlacements)
-				}
-			}
-			return "get", reqId
-		} else if reader != nil {
+		// 		displaced := false
+		// 		resetPlacements64 := make([]uint64, opts.Datashard+opts.Parityshard)
+		// 		for i := 0; i < len(resetPlacements32); i++ {
+		// 			resetPlacements64[i] = uint64(resetPlacements32[i])
+		// 		}
+		// 		resetPlacements := p.Remap(resetPlacements64, obj)
+		// 		for i, idx := range resetPlacements {
+		// 			p.ValidateLambda(idx)
+		// 			chk, _ := p.LambdaPool[placements[i]].GetChunk(fmt.Sprintf("%d@%s", i, obj.Key))
+		// 			if chk == nil {
+		// 				// Eviction tracked by simulator. Try find chunk from evicts.
+		// 				chk = p.GetEvicted(fmt.Sprintf("%d@%s", i, obj.Key))
+		// 				displaced = true
+		// 			} else if idx != placements[i] {
+		// 				// Placement changed?
+		// 				displaced = true
+		// 				log.Warn("Placement changed on reset %s, %d -> %d", chk.Key, placements[i], idx)
+		// 				p.LambdaPool[placements[i]].DelChunk(chk.Key)
+		// 			}
+		// 			if chk == nil {
+		// 				// Unlikely, but just in case
+		// 				log.Warn("Failed to track chunk %d@%s on resetting", i, obj.Key)
+		// 			} else {
+		// 				p.LambdaPool[idx].AddChunk(chk)
+		// 				chk.Reset++
+		// 			}
+		// 			p.LambdaPool[idx].Activate(obj.Timestamp)
+		// 		}
+		// 		if displaced {
+		// 			p.ResetPlacements(obj.Key, resetPlacements)
+		// 		}
+		// 	}
+		// 	return "get", reqId
+		// } else
+		if reader != nil {
 			reader.Close()
 		}
 		log.Trace("Get %s.", obj.Key)
