@@ -134,6 +134,10 @@ func (lru *LRUPlacer) Recycle(ins types.LambdaDeployment) error {
 	return cluster.ErrUnsupported
 }
 
+func (lru *LRUPlacer) GetCandidateQueue() <-chan *lambdastore.Instance {
+	return nil
+}
+
 func (lru *LRUPlacer) nextSlice(sliceSize int) (int, int) {
 	return int((atomic.AddUint64(&lru.sliceBase, uint64(sliceSize)) - uint64(sliceSize)) % uint64(len(lru.instances))), len(lru.instances)
 }
